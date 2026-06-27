@@ -12,6 +12,7 @@ var REST_TICK_1_SECONDS = 1;
 var CUE_READY = "Info";
 var CUE_TICK = "Button";
 var CUE_EXPIRED = "Interval";
+var CUE_BUTTON_PRESS = "Button";
 
 var state;
 var setNumber;
@@ -88,6 +89,10 @@ var playExpiredCue = function() {
     playIndication(CUE_EXPIRED, false, 2, false);
     cueExpiredPlayed = 1;
   }
+};
+
+var playButtonPressCue = function() {
+  playIndication(CUE_BUTTON_PRESS, false, 0, false);
 };
 
 var startRest = function(now) {
@@ -167,6 +172,8 @@ function onEvent(input, output, eventId) {
   var now = activitySeconds(input);
 
   if (eventId != 1) return;
+
+  playButtonPressCue();
 
   if (state == STATE_LIFTING) {
     startRest(now);
