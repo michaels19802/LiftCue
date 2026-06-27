@@ -42,7 +42,7 @@ var timeOfDaySeconds = function(input) {
   return secondsToday;
 };
 
-var resetRestCues = function() {
+var initRestCues = function() {
   cueReadyPlayed = 0;
   cueTick3Played = 0;
   cueTick2Played = 0;
@@ -50,34 +50,34 @@ var resetRestCues = function() {
   cueExpiredPlayed = 0;
 };
 
-var resetLiftCue = function(now) {
+var initLiftCue = function(now) {
   state = STATE_LIFTING;
   setNumber = 1;
   phaseStartSeconds = now;
   restStartSeconds = now;
   restDurationSeconds = DEFAULT_REST_SECONDS;
-  resetRestCues();
+  initRestCues();
 };
 
 var playRestCues = function(remainingSeconds) {
   var displayRemaining = Math.ceil(remainingSeconds);
 
-  if (!cueReadyPlayed && displayRemaining == READY_CUE_SECONDS) {
+  if (!cueReadyPlayed && displayRemaining <= READY_CUE_SECONDS) {
     playIndication(CUE_READY, false, 1, false);
     cueReadyPlayed = 1;
   }
 
-  if (!cueTick3Played && displayRemaining == REST_TICK_3_SECONDS) {
+  if (!cueTick3Played && displayRemaining <= REST_TICK_3_SECONDS) {
     playIndication(CUE_TICK, false, 0, false);
     cueTick3Played = 1;
   }
 
-  if (!cueTick2Played && displayRemaining == REST_TICK_2_SECONDS) {
+  if (!cueTick2Played && displayRemaining <= REST_TICK_2_SECONDS) {
     playIndication(CUE_TICK, false, 0, false);
     cueTick2Played = 1;
   }
 
-  if (!cueTick1Played && displayRemaining == REST_TICK_1_SECONDS) {
+  if (!cueTick1Played && displayRemaining <= REST_TICK_1_SECONDS) {
     playIndication(CUE_TICK, false, 0, false);
     cueTick1Played = 1;
   }
@@ -93,14 +93,14 @@ var playExpiredCue = function() {
 var startRest = function(now) {
   state = STATE_RESTING;
   restStartSeconds = now;
-  resetRestCues();
+  initRestCues();
 };
 
 var startNextSet = function(now) {
   setNumber += 1;
   state = STATE_LIFTING;
   phaseStartSeconds = now;
-  resetRestCues();
+  initRestCues();
 };
 
 var updateState = function(now) {
@@ -147,13 +147,13 @@ var publish = function(now, output, input) {
 
 function onLoad(input, output) {
   var now = activitySeconds(input);
-  resetLiftCue(now);
+  initLiftCue(now);
   publish(now, output, input);
 }
 
 function onExerciseStart(input, output) {
   var now = activitySeconds(input);
-  resetLiftCue(now);
+  initLiftCue(now);
   publish(now, output, input);
 }
 

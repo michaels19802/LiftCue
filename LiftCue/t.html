@@ -44,11 +44,14 @@
     }
 
     function lcApplyState(v) {
-      var normal = '#ffffff';
+      var lifting = '#66ff00';
+      var resting = '#ffd400';
       var danger = getStyle('css:.c-red', 'color');
-      var color = v == 2 ? danger : normal;
+      var color = lifting;
 
-      setStyle('#mode-label', 'color', color);
+      if (v == 1) color = resting;
+      if (v == 2) color = danger;
+
       setStyle('#timer-value', 'color', color);
     }
   "
