@@ -83,21 +83,21 @@
     </div>
 
     <div class="sp-t-s" style="top:65%;left:25%;width:22%;text-align:left;color:#fff;">
-      <span>HR </span>
+      <span style="padding-right:4px;">HR</span>
       <span class="f-num">
         <eval input="/Activity/Move/-1/HeartRate/Current" outputFormat="HeartRate_Fourdigits" default="--" />
       </span>
     </div>
 
     <div class="sp-t-s" style="top:65%;left:53%;width:22%;text-align:right;color:#fff;">
-      <span>CAL </span>
+      <span style="padding-right:4px;">CAL</span>
       <span class="f-num">
         <eval input="/Activity/TrainingLab/Energy" outputFormat="Energy_Fourdigits" default="--" />
       </span>
     </div>
 
     <div class="sp-t-s" style="top:74%;left:calc(50% - 50%e);color:#fff;">
-      <span>SESS </span>
+      <span style="padding-right:4px;">SESS</span>
       <span class="f-num">
         <eval input="/Activity/Move/-1/Duration/Current" outputFormat="script x => lcFormatDuration(x)" default="--" />
       </span>
