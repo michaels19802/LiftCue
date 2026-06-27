@@ -1,0 +1,35 @@
+{
+  "name": "LiftCue",
+  "version": "1.0",
+  "author": "Michael",
+  "description": "Strength rest timer",
+  "type": "feature",
+  "usage": "workout",
+  "activities": [
+    23
+  ],
+  "modificationTime": 1782568541,
+  "in": [
+    {
+      "name": "duration",
+      "source": "Activity/Move/-1/Duration/Current",
+      "type": "subscribe"
+    }
+  ],
+  "out": [
+    {
+      "name": "state"
+    },
+    {
+      "name": "setNumber"
+    },
+    {
+      "name": "timerSeconds"
+    }
+  ],
+  "template": [
+    {
+      "name": "t.html"
+    }
+  ]
+}
