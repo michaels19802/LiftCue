@@ -12,7 +12,7 @@ var REST_TICK_1_SECONDS = 1;
 var CUE_READY = "Info";
 var CUE_TICK = "Button";
 var CUE_EXPIRED = "Interval";
-var CUE_BUTTON_PRESS = "Button";
+var CUE_BUTTON_PRESS = "Interval";
 
 var state;
 var setNumber;
@@ -92,7 +92,7 @@ var playExpiredCue = function() {
 };
 
 var playButtonPressCue = function() {
-  playIndication(CUE_BUTTON_PRESS, false, 0, false);
+  playIndication(CUE_BUTTON_PRESS, false, 2, false);
 };
 
 var startRest = function(now) {
