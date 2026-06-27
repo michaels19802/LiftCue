@@ -23,8 +23,18 @@
       return v >= 0 ? lcFormatDuration(v) : '+' + lcFormatDuration(v);
     }
 
-    function lcSetSuffix(v) {
-      return v == 0 ? '' : 'DONE';
+    function lcFormatTimeOfDay(v) {
+      var seconds;
+      var hours;
+      var minutes;
+
+      if (v < 0) return '--';
+
+      seconds = Math.floor(v);
+      hours = Math.floor(seconds / 3600);
+      minutes = Math.floor((seconds % 3600) / 60);
+
+      return lcPad(hours) + ':' + lcPad(minutes);
     }
 
     function lcModeLabel(v) {
@@ -54,18 +64,14 @@
     $.unsubscribe(liftCueStateSubscription);
   ">
   <div id="suuntoplus" style="width:100%;height:100%;background-color:#000;color:#fff;">
-    <div class="p-hc sp-t-l" style="top:10%;left:5%;width:90%;text-align:center;color:#fff;" shrinkContentToFit>
+    <div class="p-hc sp-t-l" style="top:7%;left:5%;width:90%;text-align:center;color:#fff;" shrinkContentToFit>
       <span>SET </span>
       <span>
         <eval input="/Zapp/{zapp_index}/Output/setNumber" outputFormat="script x => Math.round(x)" default="1" />
       </span>
-      <span> </span>
-      <span>
-        <eval input="/Zapp/{zapp_index}/Output/state" outputFormat="script x => lcSetSuffix(x)" default="" />
-      </span>
     </div>
 
-    <div id="mode-label" class="p-hc sp-t-m" style="top:25%;width:100%;text-align:center;color:#fff;">
+    <div id="mode-label" class="p-hc sp-t-l" style="top:24%;width:100%;text-align:center;color:#fff;" shrinkContentToFit>
       <eval input="/Zapp/{zapp_index}/Output/state" outputFormat="script x => lcModeLabel(x)" default="LIFT" />
     </div>
 
@@ -87,16 +93,16 @@
       </span>
     </div>
 
-    <div class="sp-t-s p-hc" style="top:74%;width:100%;text-align:center;color:#c8c8c8;">
+    <div class="sp-t-s p-hc" style="top:74%;width:100%;text-align:center;color:#fff;">
       <span>SESS </span>
       <span class="f-num">
         <eval input="/Activity/Move/-1/Duration/Current" outputFormat="script x => lcFormatDuration(x)" default="--" />
       </span>
     </div>
 
-    <div class="sp-t-s f-num p-hc" style="top:82%;width:100%;text-align:center;color:#c8c8c8;">
+    <div class="sp-t-l f-num p-hc" style="top:84%;width:100%;text-align:center;color:#fff;" shrinkContentToFit>
       <span>
-        <eval input="/Dev/Time/LocalTime/Min" outputFormat="time ?tt" default="--" />
+        <eval input="/Zapp/{zapp_index}/Output/timeOfDay" outputFormat="script x => lcFormatTimeOfDay(x)" default="--" />
       </span>
     </div>
 

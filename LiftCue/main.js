@@ -29,6 +29,19 @@ var activitySeconds = function(input) {
   return 0;
 };
 
+var timeOfDaySeconds = function(input) {
+  var localTime;
+  var secondsToday;
+
+  if (!input || input.localTime === undefined) return -1;
+
+  localTime = Math.floor(input.localTime);
+  if (localTime <= 0) return -1;
+
+  secondsToday = localTime % 86400;
+  return secondsToday;
+};
+
 var resetRestCues = function() {
   cueReadyPlayed = 0;
   cueTick3Played = 0;
@@ -108,13 +121,14 @@ var updateState = function(now) {
   }
 };
 
-var publish = function(now, output) {
+var publish = function(now, output, input) {
   var elapsed;
   var remaining;
   var overtime;
 
   output.state = state;
   output.setNumber = setNumber;
+  output.timeOfDay = timeOfDaySeconds(input);
 
   if (state == STATE_LIFTING) {
     elapsed = now - phaseStartSeconds;
@@ -134,19 +148,19 @@ var publish = function(now, output) {
 function onLoad(input, output) {
   var now = activitySeconds(input);
   resetLiftCue(now);
-  publish(now, output);
+  publish(now, output, input);
 }
 
 function onExerciseStart(input, output) {
   var now = activitySeconds(input);
   resetLiftCue(now);
-  publish(now, output);
+  publish(now, output, input);
 }
 
 function evaluate(input, output) {
   var now = activitySeconds(input);
   updateState(now);
-  publish(now, output);
+  publish(now, output, input);
 }
 
 function onEvent(input, output, eventId) {
@@ -161,7 +175,7 @@ function onEvent(input, output, eventId) {
     startNextSet(now);
   }
 
-  publish(now, output);
+  publish(now, output, input);
 }
 
 function getUserInterface() {

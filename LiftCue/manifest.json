@@ -14,6 +14,11 @@
       "name": "duration",
       "source": "Activity/Move/-1/Duration/Current",
       "type": "subscribe"
+    },
+    {
+      "name": "localTime",
+      "source": "/Dev/Time/LocalTime/Min",
+      "type": "subscribe"
     }
   ],
   "out": [
@@ -25,6 +30,9 @@
     },
     {
       "name": "timerSeconds"
+    },
+    {
+      "name": "timeOfDay"
     }
   ],
   "template": [
