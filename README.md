@@ -35,7 +35,8 @@ It is designed for Weight Training activities where you want a one-button flow:
 ## Target
 
 - Platform: SuuntoPlus Sports App
-- Tested watch: Suunto Vertical 2
+- Tested on real Suunto Vertical 2
+- Tested on all models in the simulator
 - Intended activity: Weight Training
 - Built with: SuuntoPlus Editor for VS Code
 
