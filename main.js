@@ -2,6 +2,9 @@ var STATE_LIFTING = 0;
 var STATE_RESTING = 1;
 var STATE_OVERTIME = 2;
 
+var CONTINUE_MANUAL = 0;
+var CONTINUE_AUTO = 1;
+
 var DEFAULT_REST_SECONDS = 60;
 var REST_EXTENSION_SECONDS = 15;
 
@@ -20,6 +23,7 @@ var setNumber;
 var phaseStartSeconds;
 var restStartSeconds;
 var restDurationSeconds;
+var continueMode;
 var cueReadyPlayed;
 var cueTick3Played;
 var cueTick2Played;
@@ -58,6 +62,7 @@ var initLiftCue = function(now) {
   phaseStartSeconds = now;
   restStartSeconds = now;
   restDurationSeconds = DEFAULT_REST_SECONDS;
+  continueMode = CONTINUE_MANUAL;
   initRestCues();
 };
 
@@ -109,6 +114,15 @@ var startNextSet = function(now) {
   initRestCues();
 };
 
+var toggleContinueMode = function() {
+  if (continueMode == CONTINUE_AUTO) {
+    continueMode = CONTINUE_MANUAL;
+  }
+  else {
+    continueMode = CONTINUE_AUTO;
+  }
+};
+
 var updateState = function(now) {
   var elapsed;
   var remaining;
@@ -122,7 +136,12 @@ var updateState = function(now) {
     }
     else {
       playExpiredCue();
-      state = STATE_OVERTIME;
+      if (continueMode == CONTINUE_AUTO) {
+        startNextSet(now);
+      }
+      else {
+        state = STATE_OVERTIME;
+      }
     }
   }
 };
@@ -134,6 +153,7 @@ var publish = function(now, output, input) {
 
   output.state = state;
   output.setNumber = setNumber;
+  output.continueMode = continueMode;
   output.timeOfDay = timeOfDaySeconds(input);
 
   if (state == STATE_LIFTING) {
@@ -185,6 +205,10 @@ function onEvent(input, output, eventId) {
   else if (eventId == 2 && state == STATE_RESTING) {
     restDurationSeconds += REST_EXTENSION_SECONDS;
     initRestCues();
+  }
+  else if (eventId == 3 && state != STATE_OVERTIME) {
+    playButtonPressCue();
+    toggleContinueMode();
   }
   else {
     return;

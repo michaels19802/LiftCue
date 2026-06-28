@@ -53,6 +53,10 @@
       return 'REST OVER';
     }
 
+    function lcContinueModeLabel(v) {
+      return v == 1 ? 'A' : 'M';
+    }
+
     function lcApplyState(v) {
       var lifting = '#66ff00';
       var resting = '#ffd400';
@@ -82,6 +86,10 @@
       <span>
         <eval input="/Zapp/{zapp_index}/Output/setNumber" outputFormat="script x => Math.round(x)" default="1" />
       </span>
+    </div>
+
+    <div class="sp-t-s" style="top:13%;left:74%;width:10%;text-align:center;color:#fff;">
+      <eval input="/Zapp/{zapp_index}/Output/continueMode" outputFormat="script x => lcContinueModeLabel(x)" default="M" />
     </div>
 
     <div id="mode-label" class="sp-t-l" style="top:24%;left:calc(50% - 50%e);color:#fff;" shrinkContentToFit>
@@ -124,7 +132,8 @@
     </div>
 
     <userInput>
-      <pushButton name="up" onClick="$.put('/Zapp/{zapp_index}/Event', 2, null, 'int32');" />
+      <pushButton name="up" longPressDuration="1" onClick="$.put('/Zapp/{zapp_index}/Event', 2, null, 'int32');"
+        onLongPressStart="$.put('/Zapp/{zapp_index}/Event', 3, null, 'int32');" />
       <pushButton name="down" onClick="$.put('/Zapp/{zapp_index}/Event', 1, null, 'int32');" />
     </userInput>
   </div>
