@@ -19,8 +19,18 @@
       return lcPad(minutes) + ':' + lcPad(remainder);
     }
 
+    function lcFormatMainDuration(v) {
+      var seconds = Math.floor(Math.abs(v));
+
+      if (seconds < 60) {
+        return lcPad(seconds);
+      }
+
+      return lcFormatDuration(v);
+    }
+
     function lcFormatLiftCueTimer(v) {
-      return v >= 0 ? lcFormatDuration(v) : '+' + lcFormatDuration(v);
+      return v >= 0 ? lcFormatMainDuration(v) : '+' + lcFormatMainDuration(v);
     }
 
     function lcFormatTimeOfDay(v) {
@@ -79,17 +89,21 @@
     </div>
 
     <div id="timer-value" class="sp-d-l f-num" style="top:36%;left:calc(50% - 50%e);color:#fff;">
-      <eval input="/Zapp/{zapp_index}/Output/timerSeconds" outputFormat="script x => lcFormatLiftCueTimer(x)" default="00:00" />
+      <eval input="/Zapp/{zapp_index}/Output/timerSeconds" outputFormat="script x => lcFormatLiftCueTimer(x)" default="00" />
     </div>
 
-    <div class="sp-t-s" style="top:65%;left:25%;width:22%;text-align:left;color:#fff;">
+    <div class="sp-t-s" style="top:65%;left:22%;width:31%;text-align:left;color:#fff;">
       <span style="padding-right:4px;">HR</span>
       <span class="f-num">
         <eval input="/Activity/Move/-1/HeartRate/Current" outputFormat="HeartRate_Fourdigits" default="--" />
       </span>
+      <span style="padding-left:8px;padding-right:2px;">Z</span>
+      <span class="f-num">
+        <eval input="/Activity/Zones/HeartRate/CurrentZone" outputFormat="HeartRateZone_Twodigits" default="--" />
+      </span>
     </div>
 
-    <div class="sp-t-s" style="top:65%;left:53%;width:22%;text-align:right;color:#fff;">
+    <div class="sp-t-s" style="top:65%;left:55%;width:23%;text-align:right;color:#fff;">
       <span style="padding-right:4px;">CAL</span>
       <span class="f-num">
         <eval input="/Activity/TrainingLab/Energy" outputFormat="Energy_Fourdigits" default="--" />

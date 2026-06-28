@@ -19,16 +19,18 @@ It is designed for Weight Training activities where you want a one-button flow:
 - Up button adds 15 seconds to rest during a workout
 - Overtime timer
 - Heart rate
+- Heart rate zone
 - Calories
 - Session timer
 - Time of day
 - Vibration cue on button press
 - Strong vibration cue at rest expiry
 - Black AMOLED-friendly background
+- Compact main timer below one minute (saves battery)
 - Colour-coded main timer:
   - Green: lifting
   - Yellow: resting
-  - Red: overtime
+  - Red: rest overtime
 
 ## Target
 
