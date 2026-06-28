@@ -7,14 +7,16 @@ It is designed for Weight Training activities where you want a one-button flow:
 1. Lift a set.
 2. Press Down/Lap to start rest.
 3. Rest counts down.
-4. The watch vibrates when rest expires.
-5. Overtime counts up until you press Down/Lap to start the next set.
+4. Press Up during rest to add 15 seconds to the current and future rest periods.
+5. The watch vibrates when rest expires.
+6. Overtime counts up until you press Down/Lap to start the next set.
 
 ## Features
 
 - Set counter
 - Set timer
 - 60 second rest countdown
+- Up button adds 15 seconds to rest during a workout
 - Overtime timer
 - Heart rate
 - Calories

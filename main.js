@@ -3,6 +3,7 @@ var STATE_RESTING = 1;
 var STATE_OVERTIME = 2;
 
 var DEFAULT_REST_SECONDS = 60;
+var REST_EXTENSION_SECONDS = 15;
 
 var READY_CUE_SECONDS = 10;
 var REST_TICK_3_SECONDS = 3;
@@ -171,15 +172,22 @@ function evaluate(input, output) {
 function onEvent(input, output, eventId) {
   var now = activitySeconds(input);
 
-  if (eventId != 1) return;
+  if (eventId == 1) {
+    playButtonPressCue();
 
-  playButtonPressCue();
-
-  if (state == STATE_LIFTING) {
-    startRest(now);
+    if (state == STATE_LIFTING) {
+      startRest(now);
+    }
+    else {
+      startNextSet(now);
+    }
+  }
+  else if (eventId == 2 && state == STATE_RESTING) {
+    restDurationSeconds += REST_EXTENSION_SECONDS;
+    initRestCues();
   }
   else {
-    startNextSet(now);
+    return;
   }
 
   publish(now, output, input);
