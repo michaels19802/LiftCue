@@ -53,4 +53,3 @@ The small `M`/`A` marker shows the continue mode:
 
 This app is intentionally small and focused. It is not a rep counter, weight logger, exercise detector, workout planner, or routine tracker.
 
-Developer-loaded SuuntoPlus apps may be removed by normal Suunto App sync. For now, LiftCue is intended for local testing/sideloading unless accepted for official SuuntoPlus distribution.
