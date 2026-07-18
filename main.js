@@ -4,6 +4,7 @@ var STATE_OVERTIME = 2;
 
 var CONTINUE_MANUAL = 0;
 var CONTINUE_AUTO = 1;
+var DEFAULT_CONTINUE_MODE = CONTINUE_AUTO;
 
 var EVENT_DOWN_PRESS = 1;
 var EVENT_NEW_EXERCISE = 2;
@@ -70,7 +71,7 @@ var loadPreferences = function() {
   var parsedContinueMode;
 
   defaultRestSeconds = DEFAULT_REST_SECONDS;
-  continueMode = CONTINUE_MANUAL;
+  continueMode = DEFAULT_CONTINUE_MODE;
 
   if (typeof localStorage == "undefined") return;
 
@@ -86,8 +87,11 @@ var loadPreferences = function() {
     );
   }
 
-  if (parsedContinueMode == CONTINUE_AUTO) {
-    continueMode = CONTINUE_AUTO;
+  if (
+    parsedContinueMode == CONTINUE_MANUAL ||
+    parsedContinueMode == CONTINUE_AUTO
+  ) {
+    continueMode = parsedContinueMode;
   }
 };
 
@@ -334,14 +338,20 @@ function onEvent(input, output, eventId) {
       playAdjustmentCue();
     }
   }
-  else if (eventId == EVENT_CONTINUE_MANUAL) {
-    continueMode = CONTINUE_MANUAL;
-    savePreferences();
-  }
-  else if (eventId == EVENT_CONTINUE_AUTO) {
-    continueMode = CONTINUE_AUTO;
-    savePreferences();
-  }
+    else if (eventId == EVENT_CONTINUE_MANUAL) {
+        if (continueMode != CONTINUE_MANUAL) {
+            continueMode = CONTINUE_MANUAL;
+            savePreferences();
+            playAdjustmentCue();
+        }
+    }
+    else if (eventId == EVENT_CONTINUE_AUTO) {
+        if (continueMode != CONTINUE_AUTO) {
+            continueMode = CONTINUE_AUTO;
+            savePreferences();
+            playAdjustmentCue();
+        }
+    }
   else {
     return;
   }

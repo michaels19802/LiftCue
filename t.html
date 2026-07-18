@@ -3,10 +3,16 @@
   onLoad="
     var liftCueStateSubscription;
     var liftCueContinueModeSubscription;
+    var liftCueSetNumberSubscription;
     var lcSettingsVisible = false;
     var lcNewExerciseConfirmationVisible = false;
+    var lcSetAnnouncementVisible = false;
+    var lcSetAnnouncementToken = 0;
+    var lcLastSetNumber = -1;
     var lcUpClickSuppressed = false;
+    var lcSettingsFocusIndex = 0;
     var lcAdjustmentTapLocked = false;
+    var lcWorkoutState = 0;
 
     function lcPad(v) {
       return v > 9 ? '' + v : '0' + v;
@@ -54,8 +60,8 @@
     }
 
     function lcModeLabel(v) {
-      if (v == 0) return 'LIFT';
-      if (v == 1) return 'REST';
+      if (v == 0) return 'L I F T';
+      if (v == 1) return 'R E S T';
       return 'REST OVER';
     }
 
@@ -68,18 +74,27 @@
       var resting = '#ffd400';
       var danger = getStyle('css:.c-red', 'color');
       var color = lifting;
-      var restControlsVisibility = 'HIDDEN';
+      var restControlsColor = '#000';
+      var restControlsBorder = '#000';
+
+      lcWorkoutState = v;
 
       if (v == 1) {
         color = resting;
-        restControlsVisibility = 'VISIBLE';
+        restControlsColor = '#fff';
+        restControlsBorder = '#fff';
       }
       if (v == 2) color = danger;
 
       setStyle('#timer-value', 'color', color);
       setStyle('#mode-label', 'color', color);
       setStyle('#mode-accent-left, #mode-accent-right', 'visibility', v == 0 ? 'VISIBLE' : 'HIDDEN');
-      setStyle('#rest-minus, #rest-plus', 'visibility', restControlsVisibility);
+      setStyle('#rest-minus, #rest-plus', 'color', restControlsColor);
+      setStyle(
+        '#rest-minus-border-top, #rest-minus-border-bottom, #rest-minus-border-left, #rest-minus-border-right, #rest-plus-border-top, #rest-plus-border-bottom, #rest-plus-border-left, #rest-plus-border-right',
+        'background-color',
+        restControlsBorder
+      );
     }
 
     function lcApplyContinueMode(v) {
@@ -87,27 +102,112 @@
       setStyle('#settings-auto', 'color', v == 1 ? '#66ff00' : '#fff');
     }
 
+    function lcSettingsFocusSelector() {
+      if (lcSettingsFocusIndex == 0) return '#settings-rest-minus';
+      if (lcSettingsFocusIndex == 1) return '#settings-rest-plus';
+      if (lcSettingsFocusIndex == 2) return '#settings-manual';
+      if (lcSettingsFocusIndex == 3) return '#settings-auto';
+      return '#settings-done';
+    }
+
+    function lcApplySettingsFocus() {
+      setStyle(
+        '#settings-rest-minus, #settings-rest-plus, #settings-manual, #settings-auto, #settings-done',
+        'background-color',
+        '#202020'
+      );
+      setStyle(lcSettingsFocusSelector(), 'background-color', '#505050');
+    }
+
+    function lcMoveSettingsFocus() {
+      lcSettingsFocusIndex = (lcSettingsFocusIndex + 1) % 5;
+      lcApplySettingsFocus();
+    }
+
+    function lcActivateSettingsFocus() {
+      if (lcSettingsFocusIndex == 0) {
+        lcSendEvent(5);
+      }
+      else if (lcSettingsFocusIndex == 1) {
+        lcSendEvent(6);
+      }
+      else if (lcSettingsFocusIndex == 2) {
+        lcSendEvent(7);
+      }
+      else if (lcSettingsFocusIndex == 3) {
+        lcSendEvent(8);
+      }
+      else {
+        lcShowWorkout();
+      }
+    }
+
+    function lcCancelSetAnnouncement() {
+      lcSetAnnouncementVisible = false;
+      lcSetAnnouncementToken += 1;
+    }
+
     function lcShowWorkout() {
+      lcCancelSetAnnouncement();
       lcSettingsVisible = false;
       lcNewExerciseConfirmationVisible = false;
       navigate('#liftcue-views', 'workout-view', true);
     }
 
     function lcShowSettings() {
+      lcCancelSetAnnouncement();
       lcSettingsVisible = true;
       lcNewExerciseConfirmationVisible = false;
+      lcSettingsFocusIndex = 0;
       navigate('#liftcue-views', 'settings-view', true);
+      lcApplySettingsFocus();
     }
 
     function lcShowNewExerciseConfirmation() {
+      lcCancelSetAnnouncement();
       lcSettingsVisible = false;
       lcNewExerciseConfirmationVisible = true;
       navigate('#liftcue-views', 'new-exercise-confirmation-view', true);
     }
 
+    function lcShowSetAnnouncement(setNumber) {
+      var announcementToken;
+
+      if (lcSettingsVisible || lcNewExerciseConfirmationVisible) return;
+
+      lcSetAnnouncementVisible = true;
+      lcSetAnnouncementToken += 1;
+      announcementToken = lcSetAnnouncementToken;
+      setText('#set-announcement-value', 'SET ' + Math.round(setNumber));
+      navigate('#liftcue-views', 'set-announcement-view', true);
+
+      setTimeout(function() {
+        if (!lcSetAnnouncementVisible) return;
+        if (lcSetAnnouncementToken != announcementToken) return;
+        if (lcSettingsVisible || lcNewExerciseConfirmationVisible) return;
+        lcShowWorkout();
+      }, 2000);
+    }
+
+    function lcApplySetNumber(v) {
+      var nextSetNumber = Math.round(v);
+
+      if (lcLastSetNumber < 0) {
+        lcLastSetNumber = nextSetNumber;
+        return;
+      }
+
+      if (nextSetNumber == lcLastSetNumber) return;
+
+      lcLastSetNumber = nextSetNumber;
+      lcShowSetAnnouncement(nextSetNumber);
+    }
+
     function lcConfirmNewExercise() {
       lcSendEvent(2);
-      lcShowWorkout();
+      lcLastSetNumber = 1;
+      lcNewExerciseConfirmationVisible = false;
+      lcShowSetAnnouncement(1);
     }
 
     function lcToggleSettings() {
@@ -125,7 +225,12 @@
     }
 
     function lcHandleUpClick() {
-      if (lcUpClickSuppressed || lcSettingsVisible) return;
+      if (lcUpClickSuppressed) return;
+
+      if (lcSettingsVisible) {
+        lcActivateSettingsFocus();
+        return;
+      }
 
       if (lcNewExerciseConfirmationVisible) {
         lcConfirmNewExercise();
@@ -136,11 +241,18 @@
     }
 
     function lcHandleDownClick() {
-      if (lcSettingsVisible) return;
+      if (lcSettingsVisible) {
+        lcMoveSettingsFocus();
+        return;
+      }
 
       if (lcNewExerciseConfirmationVisible) {
         lcShowWorkout();
         return;
+      }
+
+      if (lcSetAnnouncementVisible) {
+        lcShowWorkout();
       }
 
       lcSendEvent(1);
@@ -160,6 +272,11 @@
         lcAdjustmentTapLocked = false;
       }, 400);
     }
+
+    function lcSendRestAdjustmentEvent(eventId) {
+      if (lcWorkoutState != 1) return;
+      lcSendAdjustmentEvent(eventId);
+    }
   "
   onActivate="
     $.get('Zapp/{zapp_index}/Output/state', function(v) {
@@ -168,16 +285,24 @@
     $.get('Zapp/{zapp_index}/Output/continueMode', function(v) {
       lcApplyContinueMode(v);
     });
+    $.get('Zapp/{zapp_index}/Output/setNumber', function(v) {
+      lcApplySetNumber(v);
+    });
     liftCueStateSubscription = $.subscribe('Zapp/{zapp_index}/Output/state', function(v) {
       lcApplyState(v);
     });
     liftCueContinueModeSubscription = $.subscribe('Zapp/{zapp_index}/Output/continueMode', function(v) {
       lcApplyContinueMode(v);
     });
+    liftCueSetNumberSubscription = $.subscribe('Zapp/{zapp_index}/Output/setNumber', function(v) {
+      lcApplySetNumber(v);
+    });
   "
   onDeactivate="
+    lcCancelSetAnnouncement();
     $.unsubscribe(liftCueStateSubscription);
     $.unsubscribe(liftCueContinueModeSubscription);
+    $.unsubscribe(liftCueSetNumberSubscription);
   ">
   <div id="suuntoplus" style="width:100%;height:100%;background-color:#000;color:#fff;">
     <uiViewSet id="liftcue-views" transition.type="crossfade" transition.duration="0" rollOver="none"
@@ -198,7 +323,7 @@
         </div>
 
         <div class="sp-t-s" style="top:11%;left:76%;width:10%;text-align:center;color:#fff;">
-          <eval input="/Zapp/{zapp_index}/Output/continueMode" outputFormat="script x => lcContinueModeLabel(x)" default="M" />
+          <eval input="/Zapp/{zapp_index}/Output/continueMode" outputFormat="script x => lcContinueModeLabel(x)" default="A" />
         </div>
 
         <div id="mode-accent-left"
@@ -215,13 +340,45 @@
           <eval input="/Zapp/{zapp_index}/Output/timerSeconds" outputFormat="script x => lcFormatLiftCueTimer(x)" default="00" />
         </div>
 
+        <div style="top:47%;left:2%;width:22%;height:13%;background-color:#000;"
+          onTap="lcSendRestAdjustmentEvent(3);"></div>
+
+        <div style="top:47%;left:76%;width:22%;height:13%;background-color:#000;"
+          onTap="lcSendRestAdjustmentEvent(4);"></div>
+
         <div id="rest-minus" class="sp-t-s"
-          style="top:49%;left:2%;width:22%;height:11%;text-align:center;color:#fff;background-color:#202020;visibility:hidden;"
-          onTap="lcSendAdjustmentEvent(3);">−15</div>
+          style="top:49%;left:2%;width:22%;height:11%;text-align:center;color:#000;background-color:#000;"
+          onTap="lcSendRestAdjustmentEvent(3);">−15</div>
 
         <div id="rest-plus" class="sp-t-s"
-          style="top:49%;left:76%;width:22%;height:11%;text-align:center;color:#fff;background-color:#202020;visibility:hidden;"
-          onTap="lcSendAdjustmentEvent(4);">+15</div>
+          style="top:49%;left:76%;width:22%;height:11%;text-align:center;color:#000;background-color:#000;"
+          onTap="lcSendRestAdjustmentEvent(4);">+15</div>
+
+        <div id="rest-minus-border-top"
+          style="top:47%;left:2%;width:22%;height:2px;background-color:#000;"
+          onTap="lcSendRestAdjustmentEvent(3);"></div>
+        <div id="rest-minus-border-bottom"
+          style="top:calc(60% - 2px);left:2%;width:22%;height:2px;background-color:#000;"
+          onTap="lcSendRestAdjustmentEvent(3);"></div>
+        <div id="rest-minus-border-left"
+          style="top:47%;left:2%;width:2px;height:13%;background-color:#000;"
+          onTap="lcSendRestAdjustmentEvent(3);"></div>
+        <div id="rest-minus-border-right"
+          style="top:47%;left:calc(24% - 2px);width:2px;height:13%;background-color:#000;"
+          onTap="lcSendRestAdjustmentEvent(3);"></div>
+
+        <div id="rest-plus-border-top"
+          style="top:47%;left:76%;width:22%;height:2px;background-color:#000;"
+          onTap="lcSendRestAdjustmentEvent(4);"></div>
+        <div id="rest-plus-border-bottom"
+          style="top:calc(60% - 2px);left:76%;width:22%;height:2px;background-color:#000;"
+          onTap="lcSendRestAdjustmentEvent(4);"></div>
+        <div id="rest-plus-border-left"
+          style="top:47%;left:76%;width:2px;height:13%;background-color:#000;"
+          onTap="lcSendRestAdjustmentEvent(4);"></div>
+        <div id="rest-plus-border-right"
+          style="top:47%;left:calc(98% - 2px);width:2px;height:13%;background-color:#000;"
+          onTap="lcSendRestAdjustmentEvent(4);"></div>
 
         <div class="sp-t-m" style="top:65%;left:22%;width:31%;text-align:left;color:#fff;" shrinkContentToFit>
           <span style="padding-right:4px;">HR</span>
@@ -255,36 +412,51 @@
         </div>
       </div>
 
+      <div id="set-announcement-view">
+        <div class="sp-t-l" style="top:24%;left:calc(50% - 50%e);color:#fff;" shrinkContentToFit>
+          START
+        </div>
+
+        <div id="set-announcement-value" class="sp-t-l"
+          style="top:50%;left:calc(50% - 50%e);color:#fff;" shrinkContentToFit>
+          SET 1
+        </div>
+      </div>
+
       <div id="new-exercise-confirmation-view">
-        <div class="sp-t-m" style="top:22%;left:calc(50% - 50%e);color:#fff;" shrinkContentToFit>
+        <div class="sp-t-l" style="top:22%;left:calc(50% - 50%e);color:#fff;" shrinkContentToFit>
           START NEW
         </div>
 
-        <div class="sp-t-m" style="top:34%;left:calc(50% - 50%e);color:#fff;" shrinkContentToFit>
+        <div class="sp-t-l" style="top:34%;left:calc(50% - 50%e);color:#fff;" shrinkContentToFit>
           EXERCISE?
         </div>
 
-        <div class="sp-t-m" style="top:59%;left:calc(50% - 50%e);color:#fff;" shrinkContentToFit>
+        <div class="sp-t-l" style="top:59%;left:calc(50% - 50%e);color:#fff;" shrinkContentToFit>
           <span style="padding-right:18px;">UP</span>
           <span style="color:#66ff00;">YES</span>
         </div>
 
-        <div class="sp-t-m" style="top:73%;left:calc(50% - 50%e);color:#fff;" shrinkContentToFit>
+        <div class="sp-t-l" style="top:73%;left:calc(50% - 50%e);color:#fff;" shrinkContentToFit>
           <span style="padding-right:18px;">DOWN</span>
-          <span>NO</span>
+          <span style="color:#ff0000;">NO</span>
         </div>
       </div>
 
       <div id="settings-view">
-        <div class="sp-t-s" style="top:7%;left:calc(50% - 50%e);color:#fff;" shrinkContentToFit>
-          LIFTCUE SETTINGS
+        <div class="sp-t-s" style="top:4%;left:calc(50% - 50%e);color:#fff;" shrinkContentToFit>
+          LIFTCUE
+        </div>
+
+        <div class="sp-t-s" style="top:11%;left:calc(50% - 50%e);color:#fff;" shrinkContentToFit>
+          SETTINGS
         </div>
 
         <div class="sp-t-s" style="top:24%;left:calc(50% - 50%e);color:#fff;" shrinkContentToFit>
           DEFAULT REST
         </div>
 
-        <div class="sp-t-s"
+        <div id="settings-rest-minus" class="sp-t-s"
           style="top:33%;left:3%;width:24%;height:11%;text-align:center;color:#fff;background-color:#202020;"
           onTap="lcSendAdjustmentEvent(5);">−15</div>
 
@@ -292,7 +464,7 @@
           <eval input="/Zapp/{zapp_index}/Output/defaultRestSeconds" outputFormat="script x => Math.round(x)" default="60" />
         </div>
 
-        <div class="sp-t-s"
+        <div id="settings-rest-plus" class="sp-t-s"
           style="top:33%;left:73%;width:24%;height:11%;text-align:center;color:#fff;background-color:#202020;"
           onTap="lcSendAdjustmentEvent(6);">+15</div>
 
@@ -301,14 +473,14 @@
         </div>
 
         <div id="settings-manual" class="sp-t-s"
-          style="top:64%;left:7%;width:40%;height:10%;text-align:center;color:#66ff00;background-color:#202020;"
+          style="top:64%;left:7%;width:40%;height:10%;text-align:center;color:#fff;background-color:#202020;"
           onTap="lcSendEvent(7);">MANUAL</div>
 
         <div id="settings-auto" class="sp-t-s"
-          style="top:64%;left:53%;width:40%;height:10%;text-align:center;color:#fff;background-color:#202020;"
+          style="top:64%;left:53%;width:40%;height:10%;text-align:center;color:#66ff00;background-color:#202020;"
           onTap="lcSendEvent(8);">AUTO</div>
 
-        <div class="sp-t-m"
+        <div id="settings-done" class="sp-t-m"
           style="top:82%;left:30%;width:40%;height:10%;text-align:center;color:#fff;background-color:#202020;"
           onTap="lcShowWorkout();">DONE</div>
       </div>

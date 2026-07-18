@@ -1,59 +1,97 @@
 # LiftCue
 
-LiftCue is a focused SuuntoPlus strength-training rest timer for Suunto watches.
+LiftCue is a SuuntoPlus strength-training rest timer. It tracks your exercise and set numbers while the watch records your workout normally.
 
-It tracks the current exercise and set while leaving the Suunto workout recording running. LiftCue does not record exercise names, weights, or repetitions and does not provide workout planning.
+It does not record exercise names, weights, or repetitions.
 
-## Controls
+## Quick Start
 
-### Workout display
+1. Start a Weight Training workout and switch to the LiftCue screen.
+2. Press the **Down button** when a set is done — rest starts.
+3. Press the **Down button** when you are ready for the next set, or let Auto start it when rest reaches zero.
+4. Press the **Up button** for a new exercise, then press the **Up button** again to confirm.
+5. Hold the **Up button** to open Settings.
 
-- Short Up: open the New Exercise confirmation display.
-- Long Up: open Settings.
-- Down while lifting: complete the current set and start rest.
-- Down while resting or in overtime: end rest and start the next set.
-- Touch `−15` or `+15` during rest: adjust both the current rest and the default duration used for future rests.
+Need more or less rest? Tap `−15` or `+15` during Rest. More detailed instructions for using the app are below.
 
-### New Exercise confirmation
+## Workout screen
 
-- Up: confirm Yes. This increments `EXE`, resets `SET` to 1, cancels rest or overtime, and restarts the lifting timer.
-- Down: cancel No and return to the Workout display without changing the workout state.
-- Long Up: cancel the confirmation and open Settings.
+The screen shows:
 
-The active lifting, rest, or overtime timer continues while the confirmation display is visible.
+- `EXE`: current exercise number.
+- `SET`: current set number.
+- `A` or `M`: Auto or Manual continue mode.
+- Current state and timer.
+- Heart rate, heart-rate zone, calories, session time, and time of day.
 
-### Settings display
+`L I F T` and its timer are green, `R E S T` is yellow, and `REST OVER` is red. Lift and overtime count up; rest counts down. Below one minute, timers show seconds only, such as `45`. From one minute, they show minutes and seconds, such as `01:15`.
 
-- Touch `−15` or `+15`: adjust Default Rest in 15-second steps from 15 to 600 seconds.
-- Touch Manual or Auto: select what happens when rest expires.
-- Touch Done: return to the Workout display.
-- Long Up: return to the Workout display when touch is unavailable.
+When a new set starts, a full-screen announcement shows unless Settings is open:
 
-Short Up and Down do nothing while Settings is displayed. Enable touch for the workout on the watch to use the touchscreen controls; the core lifting/rest flow remains usable with hardware buttons when touch is disabled.
+```text
+START
+SET 3
+```
 
-## Continue modes
+The Workout screen returns automatically after two seconds while the lifting timer continues.
 
-- Manual: rest expiry enters overtime and waits for Down before starting the next set.
-- Auto: rest expiry immediately starts the next set.
+## Workout controls
 
-The small `M` or `A` marker on the Workout display shows the active mode.
+- **Down during Lift:** complete the current set and start rest.
+- **Down during Rest or Rest Over:** start the next set. `SET` increments at this point.
+- **Short Up:** open the New Exercise confirmation.
+- **Long Up:** open Settings.
+- **Touch `−15` or `+15` during Rest:** adjust both the active rest and the default rest for future sets.
 
-## Features
+Touch controls require touch to be enabled for the workout. All essential lifting and rest controls remain available through the watch buttons.
 
-- Exercise and per-exercise set numbering
-- Persistent Default Rest and Continue Mode
-- Rest adjustment from the Workout and Settings displays
-- Lifting, rest, and overtime timers
-- Rest cues at 10 seconds, then 3, 2, and 1 seconds
-- Strong rest-expiry cue and short adjustment confirmation
-- Heart rate, heart-rate zone, calories, session duration, and time of day
-- Colour-coded timer: green while lifting, yellow while resting, and red in overtime
-- AMOLED-friendly black background
+## New Exercise confirmation
 
-## Target
+Short Up shows `START NEW EXERCISE?` to prevent accidental changes.
 
-- Platform: SuuntoPlus Sports App
-- Activity: Weight Training
-- Built with SuuntoPlus Editor for VS Code
-- Tested layouts: `s`, `m`, `l`, `n`, `o`, and `q`
-- Real-watch target: Suunto Vertical 2
+- **Up:** Yes—start the next exercise.
+- **Down:** No—return without changing exercise.
+- **Long Up:** cancel and open Settings.
+
+Yes increments `EXE`, resets `SET` to 1, cancels any rest or overtime, and starts a new lifting timer. Workout timing continues while the confirmation is displayed.
+
+## Settings
+
+Settings contains Default Rest, Continue Mode, and Done. Opening it does not pause timers, cues, or automatic transitions.
+
+### Touch
+
+- Touch `−15` or `+15` to change Default Rest.
+- Touch Manual or Auto to change Continue Mode.
+- Touch Done to return to the Workout screen.
+
+### Watch buttons
+
+- **Down:** move the highlighted focus through `−15`, `+15`, Manual, Auto, and Done.
+- **Short Up:** activate the highlighted control.
+- **Long Up:** return to the Workout screen.
+
+## Default Rest
+
+Default Rest is 60 seconds on first use and can be set from 15 to 600 seconds in 15-second steps. Changes are saved immediately for future workouts.
+
+If rest is active, an adjustment also changes its remaining time by the same amount. A successful change produces a short tone and vibration according to the watch settings. Nothing happens when an adjustment is blocked by the minimum or maximum.
+
+## Continue Mode
+
+- **Auto:** start the next set immediately when rest expires.
+- **Manual:** enter red `REST OVER` and wait for Down.
+
+Auto is selected on first use. Mode changes are saved immediately and produce the same confirmation tone and vibration as a rest adjustment. Selecting the active mode has no effect.
+
+## Rest cues
+
+LiftCue gives countdown cues at 10, 3, 2, and 1 seconds, followed by a stronger expiry cue. Adjusting rest recalculates which cues are still due.
+
+## Saved settings
+
+Only Default Rest and Continue Mode are saved between workouts. Exercise number, set number, timers, workout state, and the current screen are not saved. Every new workout starts at `EXE 1` and `SET 1`.
+
+## Compatibility
+
+LiftCue 1.1 is a SuuntoPlus Sports App for Weight Training and supports all six SuuntoPlus watch display layouts.
