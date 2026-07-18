@@ -1,6 +1,6 @@
 {
   "name": "LiftCue",
-  "version": "1.1",
+  "version": "1.2",
   "author": "Michael",
   "description": "Strength rest timer",
   "type": "feature",
@@ -8,7 +8,7 @@
   "activities": [
     23
   ],
-  "modificationTime": 1784380813,
+  "modificationTime": 1784396442,
   "in": [
     {
       "name": "duration",

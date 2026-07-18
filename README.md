@@ -30,7 +30,8 @@ When a new set starts, a full-screen announcement shows unless Settings is open:
 
 ```text
 START
-SET 3
+EXE 3
+SET 2
 ```
 
 The Workout screen returns automatically after two seconds while the lifting timer continues.
@@ -94,4 +95,8 @@ Only Default Rest and Continue Mode are saved between workouts. Exercise number,
 
 ## Compatibility
 
-LiftCue 1.1 is a SuuntoPlus Sports App for Weight Training and supports all six SuuntoPlus watch display layouts.
+LiftCue 1.2 is a SuuntoPlus Sports App for Weight Training and supports all six SuuntoPlus watch display layouts.
+
+## Reviews and Suggestions
+
+Please leave a review or share any improvements you would like to see. I read every comment.

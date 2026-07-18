@@ -3,11 +3,13 @@
   onLoad="
     var liftCueStateSubscription;
     var liftCueContinueModeSubscription;
+    var liftCueExerciseNumberSubscription;
     var liftCueSetNumberSubscription;
     var lcSettingsVisible = false;
     var lcNewExerciseConfirmationVisible = false;
     var lcSetAnnouncementVisible = false;
     var lcSetAnnouncementToken = 0;
+    var lcExerciseNumber = 1;
     var lcLastSetNumber = -1;
     var lcUpClickSuppressed = false;
     var lcSettingsFocusIndex = 0;
@@ -178,6 +180,7 @@
       lcSetAnnouncementVisible = true;
       lcSetAnnouncementToken += 1;
       announcementToken = lcSetAnnouncementToken;
+      setText('#exercise-announcement-value', 'EXE ' + lcExerciseNumber);
       setText('#set-announcement-value', 'SET ' + Math.round(setNumber));
       navigate('#liftcue-views', 'set-announcement-view', true);
 
@@ -187,6 +190,14 @@
         if (lcSettingsVisible || lcNewExerciseConfirmationVisible) return;
         lcShowWorkout();
       }, 2000);
+    }
+
+    function lcApplyExerciseNumber(v) {
+      lcExerciseNumber = Math.round(v);
+
+      if (lcSetAnnouncementVisible) {
+        setText('#exercise-announcement-value', 'EXE ' + lcExerciseNumber);
+      }
     }
 
     function lcApplySetNumber(v) {
@@ -204,6 +215,7 @@
     }
 
     function lcConfirmNewExercise() {
+      lcExerciseNumber += 1;
       lcSendEvent(2);
       lcLastSetNumber = 1;
       lcNewExerciseConfirmationVisible = false;
@@ -285,6 +297,9 @@
     $.get('Zapp/{zapp_index}/Output/continueMode', function(v) {
       lcApplyContinueMode(v);
     });
+    $.get('Zapp/{zapp_index}/Output/exerciseNumber', function(v) {
+      lcApplyExerciseNumber(v);
+    });
     $.get('Zapp/{zapp_index}/Output/setNumber', function(v) {
       lcApplySetNumber(v);
     });
@@ -294,6 +309,9 @@
     liftCueContinueModeSubscription = $.subscribe('Zapp/{zapp_index}/Output/continueMode', function(v) {
       lcApplyContinueMode(v);
     });
+    liftCueExerciseNumberSubscription = $.subscribe('Zapp/{zapp_index}/Output/exerciseNumber', function(v) {
+      lcApplyExerciseNumber(v);
+    });
     liftCueSetNumberSubscription = $.subscribe('Zapp/{zapp_index}/Output/setNumber', function(v) {
       lcApplySetNumber(v);
     });
@@ -302,6 +320,7 @@
     lcCancelSetAnnouncement();
     $.unsubscribe(liftCueStateSubscription);
     $.unsubscribe(liftCueContinueModeSubscription);
+    $.unsubscribe(liftCueExerciseNumberSubscription);
     $.unsubscribe(liftCueSetNumberSubscription);
   ">
   <div id="suuntoplus" style="width:100%;height:100%;background-color:#000;color:#fff;">
@@ -380,7 +399,7 @@
           style="top:47%;left:calc(98% - 2px);width:2px;height:13%;background-color:#000;"
           onTap="lcSendRestAdjustmentEvent(4);"></div>
 
-        <div class="sp-t-m" style="top:65%;left:22%;width:31%;text-align:left;color:#fff;" shrinkContentToFit>
+        <div class="sp-t-m" style="top:65%;left:10%;width:42%;text-align:left;color:#fff;" shrinkContentToFit>
           <span style="padding-right:4px;">HR</span>
           <span class="f-num">
             <eval input="/Activity/Move/-1/HeartRate/Current" outputFormat="HeartRate_Fourdigits" default="--" />
@@ -391,7 +410,7 @@
           </span>
         </div>
 
-        <div class="sp-t-m" style="top:65%;left:55%;width:23%;text-align:right;color:#fff;" shrinkContentToFit>
+        <div class="sp-t-m" style="top:65%;left:52%;width:38%;text-align:right;color:#fff;" shrinkContentToFit>
           <span style="padding-right:4px;">CAL</span>
           <span class="f-num">
             <eval input="/Activity/TrainingLab/Energy" outputFormat="Energy_Fourdigits" default="--" />
@@ -413,12 +432,17 @@
       </div>
 
       <div id="set-announcement-view">
-        <div class="sp-t-l" style="top:24%;left:calc(50% - 50%e);color:#fff;" shrinkContentToFit>
+        <div class="sp-t-l" style="top:14%;left:calc(50% - 50%e);color:#fff;" shrinkContentToFit>
           START
         </div>
 
+        <div id="exercise-announcement-value" class="sp-t-l"
+          style="top:39%;left:calc(50% - 50%e);color:#fff;" shrinkContentToFit>
+          EXE 1
+        </div>
+
         <div id="set-announcement-value" class="sp-t-l"
-          style="top:50%;left:calc(50% - 50%e);color:#fff;" shrinkContentToFit>
+          style="top:64%;left:calc(50% - 50%e);color:#fff;" shrinkContentToFit>
           SET 1
         </div>
       </div>
