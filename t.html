@@ -1,6 +1,10 @@
 <uiView
+  touchEnabled="true"
   onLoad="
     var liftCueStateSubscription;
+    var liftCueContinueModeSubscription;
+    var lcSettingsVisible = false;
+    var lcAdjustmentTapLocked = false;
 
     function lcPad(v) {
       return v > 9 ? '' + v : '0' + v;
@@ -62,79 +66,209 @@
       var resting = '#ffd400';
       var danger = getStyle('css:.c-red', 'color');
       var color = lifting;
+      var restControlsVisibility = 'HIDDEN';
 
-      if (v == 1) color = resting;
+      if (v == 1) {
+        color = resting;
+        restControlsVisibility = 'VISIBLE';
+      }
       if (v == 2) color = danger;
 
       setStyle('#timer-value', 'color', color);
+      setStyle('#mode-label', 'color', color);
+      setStyle('#mode-accent-left, #mode-accent-right', 'background-color', color);
+      setStyle('#mode-accent-left, #mode-accent-right', 'visibility', v == 0 ? 'VISIBLE' : 'HIDDEN');
+      setStyle('#rest-minus, #rest-plus', 'visibility', restControlsVisibility);
+    }
+
+    function lcApplyContinueMode(v) {
+      setStyle('#settings-manual', 'color', v == 0 ? '#66ff00' : '#fff');
+      setStyle('#settings-auto', 'color', v == 1 ? '#66ff00' : '#fff');
+    }
+
+    function lcShowWorkout() {
+      lcSettingsVisible = false;
+      navigate('#liftcue-views', 'workout-view', true);
+    }
+
+    function lcShowSettings() {
+      lcSettingsVisible = true;
+      navigate('#liftcue-views', 'settings-view', true);
+    }
+
+    function lcToggleSettings() {
+      if (lcSettingsVisible) {
+        lcShowWorkout();
+      }
+      else {
+        lcShowSettings();
+      }
+    }
+
+    function lcHandleUpClick() {
+      if (!lcSettingsVisible) {
+        $.put('/Zapp/{zapp_index}/Event', 2, null, 'int32');
+      }
+    }
+
+    function lcHandleDownClick() {
+      if (!lcSettingsVisible) {
+        $.put('/Zapp/{zapp_index}/Event', 1, null, 'int32');
+      }
+    }
+
+    function lcSendEvent(eventId) {
+      $.put('/Zapp/{zapp_index}/Event', eventId, null, 'int32');
+    }
+
+    function lcSendAdjustmentEvent(eventId) {
+      if (lcAdjustmentTapLocked) return;
+
+      lcAdjustmentTapLocked = true;
+      lcSendEvent(eventId);
+
+      setTimeout(function() {
+        lcAdjustmentTapLocked = false;
+      }, 400);
     }
   "
   onActivate="
     $.get('Zapp/{zapp_index}/Output/state', function(v) {
       lcApplyState(v);
     });
+    $.get('Zapp/{zapp_index}/Output/continueMode', function(v) {
+      lcApplyContinueMode(v);
+    });
     liftCueStateSubscription = $.subscribe('Zapp/{zapp_index}/Output/state', function(v) {
       lcApplyState(v);
+    });
+    liftCueContinueModeSubscription = $.subscribe('Zapp/{zapp_index}/Output/continueMode', function(v) {
+      lcApplyContinueMode(v);
     });
   "
   onDeactivate="
     $.unsubscribe(liftCueStateSubscription);
+    $.unsubscribe(liftCueContinueModeSubscription);
   ">
   <div id="suuntoplus" style="width:100%;height:100%;background-color:#000;color:#fff;">
-    <div class="sp-t-l" style="top:7%;left:calc(50% - 50%e);color:#fff;" shrinkContentToFit>
-      <span>SET </span>
-      <span>
-        <eval input="/Zapp/{zapp_index}/Output/setNumber" outputFormat="script x => Math.round(x)" default="1" />
-      </span>
-    </div>
+    <uiViewSet id="liftcue-views" transition.type="crossfade" transition.duration="0" rollOver="none"
+      style="position:absolute;width:100%;height:100%;">
+      <div id="workout-view" class="selected">
+        <div class="sp-t-m" style="top:3%;left:calc(50% - 50%e);color:#fff;" shrinkContentToFit>
+          <span style="padding-right:10px;">EXE</span>
+          <span>
+            <eval input="/Zapp/{zapp_index}/Output/exerciseNumber" outputFormat="script x => Math.round(x)" default="1" />
+          </span>
+        </div>
 
-    <div class="sp-t-s" style="top:13%;left:74%;width:10%;text-align:center;color:#fff;">
-      <eval input="/Zapp/{zapp_index}/Output/continueMode" outputFormat="script x => lcContinueModeLabel(x)" default="M" />
-    </div>
+        <div class="sp-t-m" style="top:10%;left:calc(50% - 50%e);color:#fff;" shrinkContentToFit>
+          <span style="padding-right:10px;">SET</span>
+          <span>
+            <eval input="/Zapp/{zapp_index}/Output/setNumber" outputFormat="script x => Math.round(x)" default="1" />
+          </span>
+        </div>
 
-    <div id="mode-label" class="sp-t-l" style="top:24%;left:calc(50% - 50%e);color:#fff;" shrinkContentToFit>
-      <eval input="/Zapp/{zapp_index}/Output/state" outputFormat="script x => lcModeLabel(x)" default="LIFT" />
-    </div>
+        <div class="sp-t-s" style="top:11%;left:76%;width:10%;text-align:center;color:#fff;">
+          <eval input="/Zapp/{zapp_index}/Output/continueMode" outputFormat="script x => lcContinueModeLabel(x)" default="M" />
+        </div>
 
-    <div id="timer-value" class="sp-d-l f-num" style="top:36%;left:calc(50% - 50%e);color:#fff;">
-      <eval input="/Zapp/{zapp_index}/Output/timerSeconds" outputFormat="script x => lcFormatLiftCueTimer(x)" default="00" />
-    </div>
+        <div id="mode-accent-left"
+          style="top:25%;left:10%;width:20%;height:1%;background-color:#66ff00;"></div>
 
-    <div class="sp-t-s" style="top:65%;left:22%;width:31%;text-align:left;color:#fff;">
-      <span style="padding-right:4px;">HR</span>
-      <span class="f-num">
-        <eval input="/Activity/Move/-1/HeartRate/Current" outputFormat="HeartRate_Fourdigits" default="--" />
-      </span>
-      <span style="padding-left:8px;padding-right:2px;">Z</span>
-      <span class="f-num">
-        <eval input="/Activity/Zones/HeartRate/CurrentZone" outputFormat="HeartRateZone_Twodigits" default="--" />
-      </span>
-    </div>
+        <div id="mode-label" class="sp-t-l" style="top:20%;left:calc(50% - 50%e);color:#66ff00;" shrinkContentToFit>
+          <eval input="/Zapp/{zapp_index}/Output/state" outputFormat="script x => lcModeLabel(x)" default="LIFT" />
+        </div>
 
-    <div class="sp-t-s" style="top:65%;left:55%;width:23%;text-align:right;color:#fff;">
-      <span style="padding-right:4px;">CAL</span>
-      <span class="f-num">
-        <eval input="/Activity/TrainingLab/Energy" outputFormat="Energy_Fourdigits" default="--" />
-      </span>
-    </div>
+        <div id="mode-accent-right"
+          style="top:25%;left:70%;width:20%;height:1%;background-color:#66ff00;"></div>
 
-    <div class="sp-t-s" style="top:74%;left:calc(50% - 50%e);color:#fff;">
-      <span style="padding-right:4px;">SESS</span>
-      <span class="f-num">
-        <eval input="/Activity/Move/-1/Duration/Current" outputFormat="script x => lcFormatDuration(x)" default="--" />
-      </span>
-    </div>
+        <div id="timer-value" class="sp-d-l f-num" style="top:31%;left:calc(50% - 50%e);color:#66ff00;">
+          <eval input="/Zapp/{zapp_index}/Output/timerSeconds" outputFormat="script x => lcFormatLiftCueTimer(x)" default="00" />
+        </div>
 
-    <div class="sp-t-l f-num" style="top:84%;left:calc(50% - 50%e);color:#fff;" shrinkContentToFit>
-      <span>
-        <eval input="/Zapp/{zapp_index}/Output/timeOfDay" outputFormat="script x => lcFormatTimeOfDay(x)" default="--" />
-      </span>
-    </div>
+        <div id="rest-minus" class="sp-t-s"
+          style="top:49%;left:2%;width:22%;height:11%;text-align:center;color:#fff;background-color:#202020;visibility:hidden;"
+          onTap="lcSendAdjustmentEvent(3);">−15</div>
+
+        <div id="rest-plus" class="sp-t-s"
+          style="top:49%;left:76%;width:22%;height:11%;text-align:center;color:#fff;background-color:#202020;visibility:hidden;"
+          onTap="lcSendAdjustmentEvent(4);">+15</div>
+
+        <div class="sp-t-m" style="top:65%;left:22%;width:31%;text-align:left;color:#fff;" shrinkContentToFit>
+          <span style="padding-right:4px;">HR</span>
+          <span class="f-num">
+            <eval input="/Activity/Move/-1/HeartRate/Current" outputFormat="HeartRate_Fourdigits" default="--" />
+          </span>
+          <span style="padding-left:8px;padding-right:2px;">Z</span>
+          <span class="f-num">
+            <eval input="/Activity/Zones/HeartRate/CurrentZone" outputFormat="HeartRateZone_Twodigits" default="--" />
+          </span>
+        </div>
+
+        <div class="sp-t-m" style="top:65%;left:55%;width:23%;text-align:right;color:#fff;" shrinkContentToFit>
+          <span style="padding-right:4px;">CAL</span>
+          <span class="f-num">
+            <eval input="/Activity/TrainingLab/Energy" outputFormat="Energy_Fourdigits" default="--" />
+          </span>
+        </div>
+
+        <div class="sp-t-m" style="top:74%;left:calc(50% - 50%e);color:#fff;" shrinkContentToFit>
+          <span style="padding-right:4px;">SESS</span>
+          <span class="f-num">
+            <eval input="/Activity/Move/-1/Duration/Current" outputFormat="script x => lcFormatDuration(x)" default="--" />
+          </span>
+        </div>
+
+        <div class="sp-t-l f-num" style="top:84%;left:calc(50% - 50%e);color:#fff;" shrinkContentToFit>
+          <span>
+            <eval input="/Zapp/{zapp_index}/Output/timeOfDay" outputFormat="script x => lcFormatTimeOfDay(x)" default="--" />
+          </span>
+        </div>
+      </div>
+
+      <div id="settings-view">
+        <div class="sp-t-s" style="top:7%;left:calc(50% - 50%e);color:#fff;" shrinkContentToFit>
+          LIFTCUE SETTINGS
+        </div>
+
+        <div class="sp-t-s" style="top:24%;left:calc(50% - 50%e);color:#fff;" shrinkContentToFit>
+          DEFAULT REST
+        </div>
+
+        <div class="sp-t-s"
+          style="top:33%;left:3%;width:24%;height:11%;text-align:center;color:#fff;background-color:#202020;"
+          onTap="lcSendAdjustmentEvent(5);">−15</div>
+
+        <div class="sp-t-s f-num" style="top:36%;left:27%;width:46%;text-align:center;color:#fff;" shrinkContentToFit>
+          <eval input="/Zapp/{zapp_index}/Output/defaultRestSeconds" outputFormat="script x => Math.round(x)" default="60" />
+        </div>
+
+        <div class="sp-t-s"
+          style="top:33%;left:73%;width:24%;height:11%;text-align:center;color:#fff;background-color:#202020;"
+          onTap="lcSendAdjustmentEvent(6);">+15</div>
+
+        <div class="sp-t-s" style="top:53%;left:calc(50% - 50%e);color:#fff;" shrinkContentToFit>
+          CONTINUE MODE
+        </div>
+
+        <div id="settings-manual" class="sp-t-s"
+          style="top:64%;left:7%;width:40%;height:10%;text-align:center;color:#66ff00;background-color:#202020;"
+          onTap="lcSendEvent(7);">MANUAL</div>
+
+        <div id="settings-auto" class="sp-t-s"
+          style="top:64%;left:53%;width:40%;height:10%;text-align:center;color:#fff;background-color:#202020;"
+          onTap="lcSendEvent(8);">AUTO</div>
+
+        <div class="sp-t-m"
+          style="top:82%;left:30%;width:40%;height:10%;text-align:center;color:#fff;background-color:#202020;"
+          onTap="lcShowWorkout();">DONE</div>
+      </div>
+    </uiViewSet>
 
     <userInput>
-      <pushButton name="up" longPressDuration="1" onClick="$.put('/Zapp/{zapp_index}/Event', 2, null, 'int32');"
-        onLongPressStart="$.put('/Zapp/{zapp_index}/Event', 3, null, 'int32');" />
-      <pushButton name="down" onClick="$.put('/Zapp/{zapp_index}/Event', 1, null, 'int32');" />
+      <pushButton name="up" longPressDuration="1" onClick="lcHandleUpClick();"
+        onLongPressFull="lcToggleSettings();" />
+      <pushButton name="down" onClick="lcHandleDownClick();" />
     </userInput>
   </div>
 </uiView>

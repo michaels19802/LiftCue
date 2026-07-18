@@ -1,55 +1,51 @@
 # LiftCue
 
-LiftCue is a simple SuuntoPlus strength-training rest timer for Suunto watches.
+LiftCue is a focused SuuntoPlus strength-training rest timer for Suunto watches.
 
-It is designed for Weight Training activities where you want a one-button flow:
+It tracks the current exercise and set while leaving the Suunto workout recording running. LiftCue does not record exercise names, weights, or repetitions and does not provide workout planning.
 
-1. Lift a set.
-2. Press Down/Lap to start rest.
-3. Rest counts down.
-4. Press Up during rest to add 15 seconds to the current and future rest periods.
-5. Long press Up to toggle manual/auto continue mode.
-6. The watch vibrates when rest expires.
-7. In manual mode, overtime counts up until you press Down/Lap to start the next set.
-8. In auto mode, the next set starts automatically when rest expires.
+## Controls
+
+### Workout display
+
+- Short Up: start a new exercise. This increments `EXE`, resets `SET` to 1, cancels rest or overtime, and restarts the lifting timer.
+- Long Up: open Settings.
+- Down while lifting: complete the current set and start rest.
+- Down while resting or in overtime: end rest and start the next set.
+- Touch `−15` or `+15` during rest: adjust both the current rest and the default duration used for future rests.
+
+### Settings display
+
+- Touch `−15` or `+15`: adjust Default Rest in 15-second steps from 15 to 600 seconds.
+- Touch Manual or Auto: select what happens when rest expires.
+- Touch Done: return to the Workout display.
+- Long Up: return to the Workout display when touch is unavailable.
+
+Short Up and Down do nothing while Settings is displayed. Enable touch for the workout on the watch to use the touchscreen controls; the core lifting/rest flow remains usable with hardware buttons when touch is disabled.
+
+## Continue modes
+
+- Manual: rest expiry enters overtime and waits for Down before starting the next set.
+- Auto: rest expiry immediately starts the next set.
+
+The small `M` or `A` marker on the Workout display shows the active mode.
 
 ## Features
 
-- Set counter
-- Set timer
-- 60 second rest countdown
-- Up button adds 15 seconds to rest during a workout
-- Manual or auto continue after rest
-- Overtime timer
-- Heart rate
-- Heart rate zone
-- Calories
-- Session timer
-- Time of day
-- Vibration cue on button press
-- Rest vibration cues at 10 seconds, then 3, 2, and 1 seconds
-- Strong vibration cue at rest expiry
-- Black AMOLED-friendly background
-- Compact main timer below one minute (saves battery)
-- Colour-coded main timer:
-  - Green: lifting
-  - Yellow: resting
-  - Red: rest overtime
-
-The small `M`/`A` marker shows the continue mode:
-
-- `M`: manual mode. Rest expiry enters overtime until Down/Lap starts the next set.
-- `A`: auto mode. Rest expiry starts the next set automatically.
+- Exercise and per-exercise set numbering
+- Persistent Default Rest and Continue Mode
+- Rest adjustment from the Workout and Settings displays
+- Lifting, rest, and overtime timers
+- Rest cues at 10 seconds, then 3, 2, and 1 seconds
+- Strong rest-expiry cue and short adjustment confirmation
+- Heart rate, heart-rate zone, calories, session duration, and time of day
+- Colour-coded timer: green while lifting, yellow while resting, and red in overtime
+- AMOLED-friendly black background
 
 ## Target
 
 - Platform: SuuntoPlus Sports App
-- Tested on real Suunto Vertical 2
-- Tested on all models in the simulator
-- Intended activity: Weight Training
-- Built with: SuuntoPlus Editor for VS Code
-
-## Notes
-
-This app is intentionally small and focused. It is not a rep counter, weight logger, exercise detector, workout planner, or routine tracker.
-
+- Activity: Weight Training
+- Built with SuuntoPlus Editor for VS Code
+- Tested layouts: `s`, `m`, `l`, `n`, `o`, and `q`
+- Real-watch target: Suunto Vertical 2

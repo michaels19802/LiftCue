@@ -5,8 +5,19 @@ var STATE_OVERTIME = 2;
 var CONTINUE_MANUAL = 0;
 var CONTINUE_AUTO = 1;
 
+var EVENT_DOWN_PRESS = 1;
+var EVENT_NEW_EXERCISE = 2;
+var EVENT_REST_MINUS = 3;
+var EVENT_REST_PLUS = 4;
+var EVENT_SETTINGS_REST_MINUS = 5;
+var EVENT_SETTINGS_REST_PLUS = 6;
+var EVENT_CONTINUE_MANUAL = 7;
+var EVENT_CONTINUE_AUTO = 8;
+
 var DEFAULT_REST_SECONDS = 60;
-var REST_EXTENSION_SECONDS = 15;
+var MIN_REST_SECONDS = 15;
+var MAX_REST_SECONDS = 600;
+var REST_ADJUSTMENT_SECONDS = 15;
 
 var READY_CUE_SECONDS = 10;
 var REST_TICK_3_SECONDS = 3;
@@ -17,12 +28,16 @@ var CUE_READY = "Info";
 var CUE_TICK = "Button";
 var CUE_EXPIRED = "Interval";
 var CUE_BUTTON_PRESS = "Interval";
+var CUE_ADJUSTMENT = "Button";
 
 var state;
+var exerciseNumber;
 var setNumber;
+var sessionSetCount;
 var phaseStartSeconds;
 var restStartSeconds;
 var restDurationSeconds;
+var defaultRestSeconds;
 var continueMode;
 var cueReadyPlayed;
 var cueTick3Played;
@@ -48,6 +63,41 @@ var timeOfDaySeconds = function(input) {
   return secondsToday;
 };
 
+var loadPreferences = function() {
+  var storedDefaultRest;
+  var storedContinueMode;
+  var parsedDefaultRest;
+  var parsedContinueMode;
+
+  defaultRestSeconds = DEFAULT_REST_SECONDS;
+  continueMode = CONTINUE_MANUAL;
+
+  if (typeof localStorage == "undefined") return;
+
+  storedDefaultRest = localStorage.getItem("defaultRestSeconds");
+  storedContinueMode = localStorage.getItem("continueMode");
+  parsedDefaultRest = parseInt(storedDefaultRest, 10);
+  parsedContinueMode = parseInt(storedContinueMode, 10);
+
+  if (parsedDefaultRest == parsedDefaultRest) {
+    defaultRestSeconds = Math.max(
+      MIN_REST_SECONDS,
+      Math.min(MAX_REST_SECONDS, parsedDefaultRest)
+    );
+  }
+
+  if (parsedContinueMode == CONTINUE_AUTO) {
+    continueMode = CONTINUE_AUTO;
+  }
+};
+
+var savePreferences = function() {
+  if (typeof localStorage == "undefined") return;
+
+  localStorage.setItem("defaultRestSeconds", "" + defaultRestSeconds);
+  localStorage.setItem("continueMode", "" + continueMode);
+};
+
 var initRestCues = function() {
   cueReadyPlayed = 0;
   cueTick3Played = 0;
@@ -58,11 +108,12 @@ var initRestCues = function() {
 
 var initLiftCue = function(now) {
   state = STATE_LIFTING;
+  exerciseNumber = 1;
   setNumber = 1;
+  sessionSetCount = 0;
   phaseStartSeconds = now;
   restStartSeconds = now;
-  restDurationSeconds = DEFAULT_REST_SECONDS;
-  continueMode = CONTINUE_MANUAL;
+  restDurationSeconds = defaultRestSeconds;
   initRestCues();
 };
 
@@ -101,9 +152,14 @@ var playButtonPressCue = function() {
   playIndication(CUE_BUTTON_PRESS, false, 2, false);
 };
 
+var playAdjustmentCue = function() {
+  playIndication(CUE_ADJUSTMENT, false, 0, false);
+};
+
 var startRest = function(now) {
   state = STATE_RESTING;
   restStartSeconds = now;
+  restDurationSeconds = defaultRestSeconds;
   initRestCues();
 };
 
@@ -114,12 +170,77 @@ var startNextSet = function(now) {
   initRestCues();
 };
 
-var toggleContinueMode = function() {
+var startNewExercise = function(now) {
+  exerciseNumber += 1;
+  setNumber = 1;
+  state = STATE_LIFTING;
+  phaseStartSeconds = now;
+  initRestCues();
+};
+
+var expireRest = function(now) {
+  playExpiredCue();
+
   if (continueMode == CONTINUE_AUTO) {
-    continueMode = CONTINUE_MANUAL;
+    startNextSet(now);
   }
   else {
-    continueMode = CONTINUE_AUTO;
+    state = STATE_OVERTIME;
+  }
+};
+
+var reconcileRestCues = function(now) {
+  var elapsed;
+  var remaining;
+  var displayRemaining;
+
+  if (state != STATE_RESTING) return;
+
+  elapsed = now - restStartSeconds;
+  remaining = restDurationSeconds - elapsed;
+
+  if (remaining <= 0) {
+    expireRest(now);
+    return;
+  }
+
+  displayRemaining = Math.ceil(remaining);
+  cueReadyPlayed = displayRemaining <= READY_CUE_SECONDS ? 1 : 0;
+  cueTick3Played = displayRemaining <= REST_TICK_3_SECONDS ? 1 : 0;
+  cueTick2Played = displayRemaining <= REST_TICK_2_SECONDS ? 1 : 0;
+  cueTick1Played = displayRemaining <= REST_TICK_1_SECONDS ? 1 : 0;
+};
+
+var adjustDefaultRest = function(deltaSeconds, now) {
+  var previousDefault = defaultRestSeconds;
+  var nextDefault = Math.max(
+    MIN_REST_SECONDS,
+    Math.min(MAX_REST_SECONDS, previousDefault + deltaSeconds)
+  );
+  var effectiveDelta = nextDefault - previousDefault;
+
+  if (effectiveDelta == 0) return false;
+
+  defaultRestSeconds = nextDefault;
+
+  if (state == STATE_RESTING) {
+    restDurationSeconds += effectiveDelta;
+    reconcileRestCues(now);
+  }
+
+  savePreferences();
+  return true;
+};
+
+var handleDownPress = function(now) {
+  playButtonPressCue();
+
+  if (state == STATE_LIFTING) {
+    sessionSetCount += 1;
+    startRest(now);
+  }
+  else {
+    startNextSet(now);
   }
 };
 
@@ -135,13 +256,7 @@ var updateState = function(now) {
       playRestCues(remaining);
     }
     else {
-      playExpiredCue();
-      if (continueMode == CONTINUE_AUTO) {
-        startNextSet(now);
-      }
-      else {
-        state = STATE_OVERTIME;
-      }
+      expireRest(now);
     }
   }
 };
@@ -152,8 +267,10 @@ var publish = function(now, output, input) {
   var overtime;
 
   output.state = state;
+  output.exerciseNumber = exerciseNumber;
   output.setNumber = setNumber;
   output.continueMode = continueMode;
+  output.defaultRestSeconds = defaultRestSeconds;
   output.timeOfDay = timeOfDaySeconds(input);
 
   if (state == STATE_LIFTING) {
@@ -173,12 +290,14 @@ var publish = function(now, output, input) {
 
 function onLoad(input, output) {
   var now = activitySeconds(input);
+  loadPreferences();
   initLiftCue(now);
   publish(now, output, input);
 }
 
 function onExerciseStart(input, output) {
   var now = activitySeconds(input);
+  loadPreferences();
   initLiftCue(now);
   publish(now, output, input);
 }
@@ -192,28 +311,42 @@ function evaluate(input, output) {
 function onEvent(input, output, eventId) {
   var now = activitySeconds(input);
 
-  if (eventId == 1) {
+  if (eventId == EVENT_DOWN_PRESS) {
+    handleDownPress(now);
+  }
+  else if (eventId == EVENT_NEW_EXERCISE) {
     playButtonPressCue();
-
-    if (state == STATE_LIFTING) {
-      startRest(now);
-    }
-    else {
-      startNextSet(now);
+    startNewExercise(now);
+  }
+  else if (
+    eventId == EVENT_REST_MINUS ||
+    eventId == EVENT_SETTINGS_REST_MINUS
+  ) {
+    if (adjustDefaultRest(-REST_ADJUSTMENT_SECONDS, now)) {
+      playAdjustmentCue();
     }
   }
-  else if (eventId == 2 && state == STATE_RESTING) {
-    restDurationSeconds += REST_EXTENSION_SECONDS;
-    initRestCues();
+  else if (
+    eventId == EVENT_REST_PLUS ||
+    eventId == EVENT_SETTINGS_REST_PLUS
+  ) {
+    if (adjustDefaultRest(REST_ADJUSTMENT_SECONDS, now)) {
+      playAdjustmentCue();
+    }
   }
-  else if (eventId == 3 && state != STATE_OVERTIME) {
-    playButtonPressCue();
-    toggleContinueMode();
+  else if (eventId == EVENT_CONTINUE_MANUAL) {
+    continueMode = CONTINUE_MANUAL;
+    savePreferences();
+  }
+  else if (eventId == EVENT_CONTINUE_AUTO) {
+    continueMode = CONTINUE_AUTO;
+    savePreferences();
   }
   else {
     return;
   }
 
+  updateState(now);
   publish(now, output, input);
 }
 
