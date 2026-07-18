@@ -4,6 +4,8 @@
     var liftCueStateSubscription;
     var liftCueContinueModeSubscription;
     var lcSettingsVisible = false;
+    var lcNewExerciseConfirmationVisible = false;
+    var lcUpClickSuppressed = false;
     var lcAdjustmentTapLocked = false;
 
     function lcPad(v) {
@@ -76,7 +78,6 @@
 
       setStyle('#timer-value', 'color', color);
       setStyle('#mode-label', 'color', color);
-      setStyle('#mode-accent-left, #mode-accent-right', 'background-color', color);
       setStyle('#mode-accent-left, #mode-accent-right', 'visibility', v == 0 ? 'VISIBLE' : 'HIDDEN');
       setStyle('#rest-minus, #rest-plus', 'visibility', restControlsVisibility);
     }
@@ -88,15 +89,33 @@
 
     function lcShowWorkout() {
       lcSettingsVisible = false;
+      lcNewExerciseConfirmationVisible = false;
       navigate('#liftcue-views', 'workout-view', true);
     }
 
     function lcShowSettings() {
       lcSettingsVisible = true;
+      lcNewExerciseConfirmationVisible = false;
       navigate('#liftcue-views', 'settings-view', true);
     }
 
+    function lcShowNewExerciseConfirmation() {
+      lcSettingsVisible = false;
+      lcNewExerciseConfirmationVisible = true;
+      navigate('#liftcue-views', 'new-exercise-confirmation-view', true);
+    }
+
+    function lcConfirmNewExercise() {
+      lcSendEvent(2);
+      lcShowWorkout();
+    }
+
     function lcToggleSettings() {
+      lcUpClickSuppressed = true;
+      setTimeout(function() {
+        lcUpClickSuppressed = false;
+      }, 400);
+
       if (lcSettingsVisible) {
         lcShowWorkout();
       }
@@ -106,15 +125,25 @@
     }
 
     function lcHandleUpClick() {
-      if (!lcSettingsVisible) {
-        $.put('/Zapp/{zapp_index}/Event', 2, null, 'int32');
+      if (lcUpClickSuppressed || lcSettingsVisible) return;
+
+      if (lcNewExerciseConfirmationVisible) {
+        lcConfirmNewExercise();
+        return;
       }
+
+      lcShowNewExerciseConfirmation();
     }
 
     function lcHandleDownClick() {
-      if (!lcSettingsVisible) {
-        $.put('/Zapp/{zapp_index}/Event', 1, null, 'int32');
+      if (lcSettingsVisible) return;
+
+      if (lcNewExerciseConfirmationVisible) {
+        lcShowWorkout();
+        return;
       }
+
+      lcSendEvent(1);
     }
 
     function lcSendEvent(eventId) {
@@ -223,6 +252,26 @@
           <span>
             <eval input="/Zapp/{zapp_index}/Output/timeOfDay" outputFormat="script x => lcFormatTimeOfDay(x)" default="--" />
           </span>
+        </div>
+      </div>
+
+      <div id="new-exercise-confirmation-view">
+        <div class="sp-t-m" style="top:22%;left:calc(50% - 50%e);color:#fff;" shrinkContentToFit>
+          START NEW
+        </div>
+
+        <div class="sp-t-m" style="top:34%;left:calc(50% - 50%e);color:#fff;" shrinkContentToFit>
+          EXERCISE?
+        </div>
+
+        <div class="sp-t-m" style="top:59%;left:calc(50% - 50%e);color:#fff;" shrinkContentToFit>
+          <span style="padding-right:18px;">UP</span>
+          <span style="color:#66ff00;">YES</span>
+        </div>
+
+        <div class="sp-t-m" style="top:73%;left:calc(50% - 50%e);color:#fff;" shrinkContentToFit>
+          <span style="padding-right:18px;">DOWN</span>
+          <span>NO</span>
         </div>
       </div>
 

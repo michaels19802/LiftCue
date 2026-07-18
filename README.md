@@ -8,11 +8,19 @@ It tracks the current exercise and set while leaving the Suunto workout recordin
 
 ### Workout display
 
-- Short Up: start a new exercise. This increments `EXE`, resets `SET` to 1, cancels rest or overtime, and restarts the lifting timer.
+- Short Up: open the New Exercise confirmation display.
 - Long Up: open Settings.
 - Down while lifting: complete the current set and start rest.
 - Down while resting or in overtime: end rest and start the next set.
 - Touch `−15` or `+15` during rest: adjust both the current rest and the default duration used for future rests.
+
+### New Exercise confirmation
+
+- Up: confirm Yes. This increments `EXE`, resets `SET` to 1, cancels rest or overtime, and restarts the lifting timer.
+- Down: cancel No and return to the Workout display without changing the workout state.
+- Long Up: cancel the confirmation and open Settings.
+
+The active lifting, rest, or overtime timer continues while the confirmation display is visible.
 
 ### Settings display
 
