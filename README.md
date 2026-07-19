@@ -1,16 +1,17 @@
 # LiftCue
 
-LiftCue is a SuuntoPlus strength-training rest timer. It tracks your exercise and set numbers while the watch records your workout normally.
+LiftCue is a SuuntoPlus strength-training rest and duration timer. It tracks your exercise and set numbers while the watch records your workout normally.
 
 It does not record exercise names, weights, or repetitions.
 
 ## Quick Start
 
-1. Start a Weight Training workout and switch to the LiftCue screen.
-2. Press the **Down button** when a set is done — rest starts.
-3. Press the **Down button** when you are ready for the next set, or let Auto start it when rest reaches zero.
-4. Press the **Up button** for a new exercise, then press the **Up button** again to confirm.
-5. Hold the **Up button** to open Settings.
+1. Start a Weight Training workout and switch to LiftCue.
+2. Choose a session duration target or leave it `OFF`, then select `START`.
+3. Press the **Down button** when a set is done — rest starts.
+4. Press the **Down button** when you are ready for the next set, or let Auto start it when rest reaches zero.
+5. Press the **Up button** for a new exercise, then press the **Up button** again to confirm.
+6. Hold the **Up button** to open Settings.
 
 Need more or less rest? Tap `−15` or `+15` during Rest. More detailed instructions for using the app are below.
 
@@ -22,7 +23,8 @@ The screen shows:
 - `SET`: current set number.
 - `A` or `M`: Auto or Manual continue mode.
 - Current state and timer.
-- Heart rate, heart-rate zone, calories, session time, and time of day.
+- Heart rate, heart-rate zone, calories, LiftCue duration, and time of day.
+- `DT`: session duration target progress, when a target is active.
 
 `L I F T` and its timer are green, `R E S T` is yellow, and `REST OVER` is red. Lift and overtime count up; rest counts down. Below one minute, timers show seconds only, such as `45`. From one minute, they show minutes and seconds, such as `01:15`.
 
@@ -35,6 +37,15 @@ SET 2
 ```
 
 The Workout screen returns automatically after two seconds while the lifting timer continues.
+
+## Session Duration Target
+
+Before the first set, choose `OFF` or a target from 15 to 300 minutes in 15-minute steps. The selected value is saved for your next workout.
+
+- **Touch:** tap `−15`, `+15`, or `START`.
+- **Watch buttons:** press Down to move the highlight, then press Up to select it. `START` is highlighted first.
+
+The LiftCue duration timer begins when you select `START`. With a target active, `DT` shows the percentage completed. At 100%, LiftCue gives one alert and keeps the workout running. Tap `DISMISS` or press either button to close the alert. `OFF` hides `DT` and disables the alert.
 
 ## Workout controls
 
@@ -91,11 +102,11 @@ LiftCue gives countdown cues at 10, 3, 2, and 1 seconds, followed by a stronger 
 
 ## Saved settings
 
-Only Default Rest and Continue Mode are saved between workouts. Exercise number, set number, timers, workout state, and the current screen are not saved. Every new workout starts at `EXE 1` and `SET 1`.
+Default Rest, Continue Mode, and Session Duration Target are saved between workouts. Exercise number, set number, timers, workout state, target progress, and the current screen are not saved. Every new workout starts at `EXE 1` and `SET 1` after you select `START`.
 
 ## Compatibility
 
-LiftCue 1.2 is a SuuntoPlus Sports App for Weight Training and supports all six SuuntoPlus watch display layouts.
+LiftCue 1.3 is a SuuntoPlus Sports App for Weight Training and supports all six SuuntoPlus watch display layouts.
 
 ## Reviews and Suggestions
 

@@ -5,14 +5,22 @@
     var liftCueContinueModeSubscription;
     var liftCueExerciseNumberSubscription;
     var liftCueSetNumberSubscription;
+    var liftCueSessionStartedSubscription;
+    var liftCueSessionDurationTargetAlertSubscription;
     var lcSettingsVisible = false;
     var lcNewExerciseConfirmationVisible = false;
     var lcSetAnnouncementVisible = false;
+    var lcDurationSetupVisible = true;
+    var lcDurationAlertVisible = false;
+    var lcDurationAlertDismissRequested = false;
+    var lcDurationAlertReturnView = 'workout';
+    var lcSessionStarted = false;
     var lcSetAnnouncementToken = 0;
     var lcExerciseNumber = 1;
     var lcLastSetNumber = -1;
     var lcUpClickSuppressed = false;
     var lcSettingsFocusIndex = 0;
+    var lcDurationSetupFocusIndex = 0;
     var lcAdjustmentTapLocked = false;
     var lcWorkoutState = 0;
 
@@ -45,6 +53,26 @@
 
     function lcFormatLiftCueTimer(v) {
       return v >= 0 ? lcFormatMainDuration(v) : '+' + lcFormatMainDuration(v);
+    }
+
+    function lcFormatSessionDurationTarget(v) {
+      var minutes = Math.round(v);
+      return minutes <= 0 ? 'OFF' : '' + minutes;
+    }
+
+    function lcFormatSessionDurationTargetAlert(v) {
+      var minutes = Math.round(v);
+      return minutes > 0 ? minutes + ' MIN' : '';
+    }
+
+    function lcFormatSessionDurationTargetLabel(v) {
+      return Math.floor(v) < 0 ? '' : 'DT';
+    }
+
+    function lcFormatSessionDurationTargetPercent(v) {
+      var percent = Math.floor(v);
+      if (percent < 0) return '';
+      return percent + '%';
     }
 
     function lcFormatTimeOfDay(v) {
@@ -149,33 +177,143 @@
       lcSetAnnouncementToken += 1;
     }
 
-    function lcShowWorkout() {
+    function lcShowDurationSetup() {
+      if (lcDurationAlertVisible) return;
+
       lcCancelSetAnnouncement();
       lcSettingsVisible = false;
       lcNewExerciseConfirmationVisible = false;
+      lcDurationSetupVisible = true;
+      lcDurationSetupFocusIndex = 0;
+      navigate('#liftcue-views', 'session-duration-target-view', true);
+      lcApplyDurationSetupFocus();
+    }
+
+    function lcShowWorkout() {
+      if (lcDurationAlertVisible) return;
+
+      if (!lcSessionStarted) {
+        lcShowDurationSetup();
+        return;
+      }
+
+      lcCancelSetAnnouncement();
+      lcSettingsVisible = false;
+      lcNewExerciseConfirmationVisible = false;
+      lcDurationSetupVisible = false;
       navigate('#liftcue-views', 'workout-view', true);
     }
 
     function lcShowSettings() {
+      if (lcDurationAlertVisible) return;
+
+      if (!lcSessionStarted) {
+        lcShowDurationSetup();
+        return;
+      }
+
       lcCancelSetAnnouncement();
       lcSettingsVisible = true;
       lcNewExerciseConfirmationVisible = false;
+      lcDurationSetupVisible = false;
       lcSettingsFocusIndex = 0;
       navigate('#liftcue-views', 'settings-view', true);
       lcApplySettingsFocus();
     }
 
     function lcShowNewExerciseConfirmation() {
+      if (lcDurationAlertVisible || !lcSessionStarted) return;
+
       lcCancelSetAnnouncement();
       lcSettingsVisible = false;
       lcNewExerciseConfirmationVisible = true;
+      lcDurationSetupVisible = false;
       navigate('#liftcue-views', 'new-exercise-confirmation-view', true);
+    }
+
+    function lcShowSessionDurationTargetAlert() {
+      if (lcDurationAlertVisible || lcDurationAlertDismissRequested) return;
+
+      if (lcSetAnnouncementVisible) {
+        lcCancelSetAnnouncement();
+        lcDurationAlertReturnView = 'workout';
+      }
+      else if (lcSettingsVisible) {
+        lcDurationAlertReturnView = 'settings';
+      }
+      else if (lcNewExerciseConfirmationVisible) {
+        lcDurationAlertReturnView = 'new-exercise';
+      }
+      else {
+        lcDurationAlertReturnView = 'workout';
+      }
+
+      lcDurationAlertVisible = true;
+      navigate('#liftcue-views', 'session-duration-target-alert-view', true);
+    }
+
+    function lcReturnFromSessionDurationTargetAlert() {
+      if (lcDurationAlertReturnView == 'settings') {
+        lcShowSettings();
+      }
+      else if (lcDurationAlertReturnView == 'new-exercise') {
+        lcShowNewExerciseConfirmation();
+      }
+      else {
+        lcShowWorkout();
+      }
+    }
+
+    function lcDismissSessionDurationTargetAlert() {
+      if (!lcDurationAlertVisible) return;
+
+      lcDurationAlertVisible = false;
+      lcDurationAlertDismissRequested = true;
+      lcSendEvent(12);
+      lcReturnFromSessionDurationTargetAlert();
+    }
+
+    function lcApplySessionStarted(v) {
+      lcSessionStarted = Math.round(v) == 1;
+
+      if (lcDurationAlertVisible) return;
+
+      if (lcSessionStarted) {
+        if (lcDurationSetupVisible) {
+          lcDurationSetupVisible = false;
+          lcShowWorkout();
+        }
+      }
+      else if (!lcDurationSetupVisible) {
+        lcShowDurationSetup();
+      }
+    }
+
+    function lcApplySessionDurationTargetAlert(v) {
+      var active = Math.round(v) == 1;
+
+      if (active) {
+        lcShowSessionDurationTargetAlert();
+        return;
+      }
+
+      lcDurationAlertDismissRequested = false;
+
+      if (lcDurationAlertVisible) {
+        lcDurationAlertVisible = false;
+        lcReturnFromSessionDurationTargetAlert();
+      }
     }
 
     function lcShowSetAnnouncement(setNumber) {
       var announcementToken;
 
-      if (lcSettingsVisible || lcNewExerciseConfirmationVisible) return;
+      if (
+        lcSettingsVisible ||
+        lcNewExerciseConfirmationVisible ||
+        lcDurationSetupVisible ||
+        lcDurationAlertVisible
+      ) return;
 
       lcSetAnnouncementVisible = true;
       lcSetAnnouncementToken += 1;
@@ -187,7 +325,12 @@
       setTimeout(function() {
         if (!lcSetAnnouncementVisible) return;
         if (lcSetAnnouncementToken != announcementToken) return;
-        if (lcSettingsVisible || lcNewExerciseConfirmationVisible) return;
+        if (
+          lcSettingsVisible ||
+          lcNewExerciseConfirmationVisible ||
+          lcDurationSetupVisible ||
+          lcDurationAlertVisible
+        ) return;
         lcShowWorkout();
       }, 2000);
     }
@@ -197,6 +340,51 @@
 
       if (lcSetAnnouncementVisible) {
         setText('#exercise-announcement-value', 'EXE ' + lcExerciseNumber);
+      }
+    }
+
+    function lcDurationSetupFocusSelector() {
+      if (lcDurationSetupFocusIndex == 0) return '#duration-target-start';
+      if (lcDurationSetupFocusIndex == 1) return '#duration-target-minus';
+      return '#duration-target-plus';
+    }
+
+    function lcApplyDurationSetupFocus() {
+      setStyle(
+        '#duration-target-minus, #duration-target-plus, #duration-target-start',
+        'background-color',
+        '#202020'
+      );
+      setStyle(
+        lcDurationSetupFocusSelector(),
+        'background-color',
+        '#505050'
+      );
+    }
+
+    function lcMoveDurationSetupFocus() {
+      lcDurationSetupFocusIndex = (lcDurationSetupFocusIndex + 1) % 3;
+      lcApplyDurationSetupFocus();
+    }
+
+    function lcStartSession() {
+      if (lcSessionStarted) return;
+
+      lcSendEvent(11);
+      lcSessionStarted = true;
+      lcDurationSetupVisible = false;
+      lcShowWorkout();
+    }
+
+    function lcActivateDurationSetupFocus() {
+      if (lcDurationSetupFocusIndex == 0) {
+        lcStartSession();
+      }
+      else if (lcDurationSetupFocusIndex == 1) {
+        lcSendAdjustmentEvent(9);
+      }
+      else {
+        lcSendAdjustmentEvent(10);
       }
     }
 
@@ -222,11 +410,15 @@
       lcShowSetAnnouncement(1);
     }
 
-    function lcToggleSettings() {
+    function lcSuppressUpClick() {
       lcUpClickSuppressed = true;
       setTimeout(function() {
         lcUpClickSuppressed = false;
       }, 400);
+    }
+
+    function lcToggleSettings() {
+      if (lcDurationAlertVisible || lcDurationSetupVisible) return;
 
       if (lcSettingsVisible) {
         lcShowWorkout();
@@ -236,8 +428,31 @@
       }
     }
 
+    function lcHandleUpLongPress() {
+      lcSuppressUpClick();
+
+      if (lcDurationAlertVisible) {
+        lcDismissSessionDurationTargetAlert();
+        return;
+      }
+
+      if (lcDurationSetupVisible) return;
+
+      lcToggleSettings();
+    }
+
     function lcHandleUpClick() {
       if (lcUpClickSuppressed) return;
+
+      if (lcDurationAlertVisible) {
+        lcDismissSessionDurationTargetAlert();
+        return;
+      }
+
+      if (lcDurationSetupVisible) {
+        lcActivateDurationSetupFocus();
+        return;
+      }
 
       if (lcSettingsVisible) {
         lcActivateSettingsFocus();
@@ -253,6 +468,16 @@
     }
 
     function lcHandleDownClick() {
+      if (lcDurationAlertVisible) {
+        lcDismissSessionDurationTargetAlert();
+        return;
+      }
+
+      if (lcDurationSetupVisible) {
+        lcMoveDurationSetupFocus();
+        return;
+      }
+
       if (lcSettingsVisible) {
         lcMoveSettingsFocus();
         return;
@@ -303,6 +528,12 @@
     $.get('Zapp/{zapp_index}/Output/setNumber', function(v) {
       lcApplySetNumber(v);
     });
+    $.get('Zapp/{zapp_index}/Output/sessionStarted', function(v) {
+      lcApplySessionStarted(v);
+    });
+    $.get('Zapp/{zapp_index}/Output/sessionDurationTargetAlertActive', function(v) {
+      lcApplySessionDurationTargetAlert(v);
+    });
     liftCueStateSubscription = $.subscribe('Zapp/{zapp_index}/Output/state', function(v) {
       lcApplyState(v);
     });
@@ -315,6 +546,12 @@
     liftCueSetNumberSubscription = $.subscribe('Zapp/{zapp_index}/Output/setNumber', function(v) {
       lcApplySetNumber(v);
     });
+    liftCueSessionStartedSubscription = $.subscribe('Zapp/{zapp_index}/Output/sessionStarted', function(v) {
+      lcApplySessionStarted(v);
+    });
+    liftCueSessionDurationTargetAlertSubscription = $.subscribe('Zapp/{zapp_index}/Output/sessionDurationTargetAlertActive', function(v) {
+      lcApplySessionDurationTargetAlert(v);
+    });
   "
   onDeactivate="
     lcCancelSetAnnouncement();
@@ -322,11 +559,41 @@
     $.unsubscribe(liftCueContinueModeSubscription);
     $.unsubscribe(liftCueExerciseNumberSubscription);
     $.unsubscribe(liftCueSetNumberSubscription);
+    $.unsubscribe(liftCueSessionStartedSubscription);
+    $.unsubscribe(liftCueSessionDurationTargetAlertSubscription);
   ">
   <div id="suuntoplus" style="width:100%;height:100%;background-color:#000;color:#fff;">
     <uiViewSet id="liftcue-views" transition.type="crossfade" transition.duration="0" rollOver="none"
       style="position:absolute;width:100%;height:100%;">
-      <div id="workout-view" class="selected">
+      <div id="session-duration-target-view" class="selected">
+        <div class="sp-t-m" style="top:8%;left:calc(50% - 50%e);color:#fff;" shrinkContentToFit>
+          LIFTCUE
+        </div>
+
+        <div class="sp-t-s" style="top:23%;left:calc(50% - 50%e);color:#fff;" shrinkContentToFit>
+          DURATION TARGET
+        </div>
+
+        <div id="duration-target-minus" class="sp-t-s"
+          style="top:40%;left:3%;width:24%;height:13%;text-align:center;color:#fff;background-color:#202020;"
+          onTap="lcSendAdjustmentEvent(9);">−15</div>
+
+        <div class="sp-t-l"
+          style="top:39%;left:29%;width:42%;text-align:center;color:#fff;" shrinkContentToFit>
+          <eval input="/Zapp/{zapp_index}/Output/sessionDurationTargetMinutes"
+            outputFormat="script x => lcFormatSessionDurationTarget(x)" default="OFF" />
+        </div>
+
+        <div id="duration-target-plus" class="sp-t-s"
+          style="top:40%;left:73%;width:24%;height:13%;text-align:center;color:#fff;background-color:#202020;"
+          onTap="lcSendAdjustmentEvent(10);">+15</div>
+
+        <div id="duration-target-start" class="sp-t-l"
+          style="top:70%;left:22%;width:56%;height:14%;text-align:center;color:#fff;background-color:#505050;"
+          onTap="lcStartSession();">START</div>
+      </div>
+
+      <div id="workout-view">
         <div class="sp-t-m" style="top:3%;left:calc(50% - 50%e);color:#fff;" shrinkContentToFit>
           <span style="padding-right:10px;">EXE</span>
           <span>
@@ -399,7 +666,7 @@
           style="top:47%;left:calc(98% - 2px);width:2px;height:13%;background-color:#000;"
           onTap="lcSendRestAdjustmentEvent(4);"></div>
 
-        <div class="sp-t-m" style="top:65%;left:10%;width:42%;text-align:left;color:#fff;" shrinkContentToFit>
+        <div class="sp-t-m" style="top:65%;left:14%;width:38%;text-align:left;color:#fff;" shrinkContentToFit>
           <span style="padding-right:4px;">HR</span>
           <span class="f-num">
             <eval input="/Activity/Move/-1/HeartRate/Current" outputFormat="HeartRate_Fourdigits" default="--" />
@@ -410,17 +677,31 @@
           </span>
         </div>
 
-        <div class="sp-t-m" style="top:65%;left:52%;width:38%;text-align:right;color:#fff;" shrinkContentToFit>
+        <div class="sp-t-m" style="top:65%;left:55%;width:31%;text-align:right;color:#fff;" shrinkContentToFit>
           <span style="padding-right:4px;">CAL</span>
           <span class="f-num">
             <eval input="/Activity/TrainingLab/Energy" outputFormat="Energy_Fourdigits" default="--" />
           </span>
         </div>
 
-        <div class="sp-t-m" style="top:74%;left:calc(50% - 50%e);color:#fff;" shrinkContentToFit>
-          <span style="padding-right:4px;">SESS</span>
+        <div class="sp-t-m"
+          style="top:74%;left:14%;width:42%;text-align:left;color:#fff;" shrinkContentToFit>
+          <span style="padding-right:4px;">DUR</span>
           <span class="f-num">
-            <eval input="/Activity/Move/-1/Duration/Current" outputFormat="script x => lcFormatDuration(x)" default="--" />
+            <eval input="/Zapp/{zapp_index}/Output/durationSeconds"
+              outputFormat="script x => lcFormatDuration(x)" default="00:00" />
+          </span>
+        </div>
+
+        <div class="sp-t-m"
+          style="top:74%;left:55%;width:31%;text-align:right;color:#fff;" shrinkContentToFit>
+          <span style="padding-right:4px;">
+            <eval input="/Zapp/{zapp_index}/Output/sessionDurationTargetPercent"
+              outputFormat="script x => lcFormatSessionDurationTargetLabel(x)" default="" />
+          </span>
+          <span class="f-num">
+            <eval input="/Zapp/{zapp_index}/Output/sessionDurationTargetPercent"
+              outputFormat="script x => lcFormatSessionDurationTargetPercent(x)" default="" />
           </span>
         </div>
 
@@ -429,6 +710,29 @@
             <eval input="/Zapp/{zapp_index}/Output/timeOfDay" outputFormat="script x => lcFormatTimeOfDay(x)" default="--" />
           </span>
         </div>
+      </div>
+
+      <div id="session-duration-target-alert-view">
+        <div class="sp-t-m" style="top:10%;left:calc(50% - 50%e);color:#fff;" shrinkContentToFit>
+          SESSION
+        </div>
+
+        <div class="sp-t-l" style="top:28%;left:calc(50% - 50%e);color:#66ff00;" shrinkContentToFit>
+          TARGET
+        </div>
+
+        <div class="sp-t-l" style="top:43%;left:calc(50% - 50%e);color:#66ff00;" shrinkContentToFit>
+          REACHED
+        </div>
+
+        <div class="sp-t-m" style="top:61%;left:calc(50% - 50%e);color:#fff;" shrinkContentToFit>
+          <eval input="/Zapp/{zapp_index}/Output/sessionDurationTargetMinutes"
+            outputFormat="script x => lcFormatSessionDurationTargetAlert(x)" default="" />
+        </div>
+
+        <div id="duration-target-dismiss" class="sp-t-m"
+          style="top:79%;left:25%;width:50%;height:11%;text-align:center;color:#fff;background-color:#505050;"
+          onTap="lcDismissSessionDurationTargetAlert();">DISMISS</div>
       </div>
 
       <div id="set-announcement-view">
@@ -469,7 +773,7 @@
 
       <div id="settings-view">
         <div class="sp-t-s" style="top:4%;left:calc(50% - 50%e);color:#fff;" shrinkContentToFit>
-          LIFTCUE
+          LIFTCUE 1.3
         </div>
 
         <div class="sp-t-s" style="top:11%;left:calc(50% - 50%e);color:#fff;" shrinkContentToFit>
@@ -512,7 +816,7 @@
 
     <userInput>
       <pushButton name="up" longPressDuration="1" onClick="lcHandleUpClick();"
-        onLongPressFull="lcToggleSettings();" />
+        onLongPressFull="lcHandleUpLongPress();" />
       <pushButton name="down" onClick="lcHandleDownClick();" />
     </userInput>
   </div>

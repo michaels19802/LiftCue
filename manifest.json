@@ -1,14 +1,14 @@
 {
   "name": "LiftCue",
-  "version": "1.2",
+  "version": "1.3",
   "author": "Michael",
-  "description": "Strength rest timer",
+  "description": "Strength rest and duration timer",
   "type": "feature",
   "usage": "workout",
   "activities": [
     23
   ],
-  "modificationTime": 1784396442,
+  "modificationTime": 1784450242,
   "in": [
     {
       "name": "duration",
@@ -42,6 +42,21 @@
     },
     {
       "name": "timeOfDay"
+    },
+    {
+      "name": "sessionStarted"
+    },
+    {
+      "name": "durationSeconds"
+    },
+    {
+      "name": "sessionDurationTargetMinutes"
+    },
+    {
+      "name": "sessionDurationTargetPercent"
+    },
+    {
+      "name": "sessionDurationTargetAlertActive"
     }
   ],
   "template": [

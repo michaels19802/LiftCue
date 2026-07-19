@@ -1,4 +1,5 @@
 {
   "defaultRestSeconds": "60",
-  "continueMode": "1"
+  "continueMode": "1",
+  "sessionDurationTargetMinutes": "0"
 }
